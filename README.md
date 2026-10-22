@@ -89,6 +89,7 @@ Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O re
 - **`Cannot read properties of undefined (reading 'isPackaged')` ao rodar `npm run dev`:** a variável de ambiente `ELECTRON_RUN_AS_NODE` está definida (acontece em processos iniciados pelo VS Code). Remova-a: `env -u ELECTRON_RUN_AS_NODE npm run dev` no Linux, ou `Remove-Item Env:ELECTRON_RUN_AS_NODE` no PowerShell.
 - **Linux: erro sobre `chrome-sandbox` / "SUID sandbox helper":** algumas distribuições restringem _user namespaces_. No Ubuntu 24.04 desta máquina funcionou sem ajustes. Se acontecer, siga a [documentação do Electron](https://www.electronjs.org/docs/latest/tutorial/sandbox#linux); **nunca** use `--no-sandbox`.
 - **Linux/Wayland:** a janela principal da Etapa 1 funciona no Wayland. A janela da mascote (Etapa 3) vai exigir XWayland (ADR-0004).
+- **`Error: Electron uninstall` ao rodar `npm run dev`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Rode `node node_modules/electron/install.js` para baixá-lo e tente de novo.
 - **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
 
 ## Trabalhando em mais de uma máquina

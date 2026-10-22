@@ -18,7 +18,7 @@ Legenda: **Dep.** = depende de; **Atende** = requisito(s).
 | [x] T1.10 | UI placeholder: `App.tsx` mostra "Fai ✨" + `describeAppInfo` via `window.fai`; `index.html` com CSP; tokens CSS da paleta (`product.md`).                                                                                                                                                                                                                                                                        | T1.06, T1.08, T1.09               | RF-01                                     | Janela mostra nome, versão e plataforma.                                            |
 | [x] T1.11 | Testes de infraestrutura: (a) **domínio**: `describeAppInfo` + teste de arquitetura que varre `src/domain` buscando imports proibidos; (b) **componente**: `App` renderiza dados de um `window.fai` falso e trata erro; (c) **contrato**: preload expõe exatamente a API declarada (electron mockado), handler rejeita payload inválido e remetente desconhecido, e `secureWebPreferences` tem as flags exigidas. | T1.04, T1.05, T1.06, T1.09, T1.10 | RF-01 CA3, RNF-01 CA1, RNF-03, RNF-06 CA4 | `npm test` verde com saída registrada.                                              |
 | [x] T1.12 | README: pré-requisitos (Node 22 via nvm / nvm-windows), instalação, `dev`, `build`, testes, lint, typecheck, no Windows e no Linux; nota sobre Wayland.                                                                                                                                                                                                                                                           | T1.10                             | RNF-14                                    | Comandos do README conferidos.                                                      |
-| [~] T1.13 | Verificação final: `npm run check` e `npm run build` no Linux (saída real); `npm run dev` no Linux; roteiro curto de validação no Windows (para eu executar) e registro do resultado.                                                                                                                                                                                                                             | T1.11, T1.12                      | RF-01, RNF-05                             | Resultados anotados em "Notas".                                                     |
+| [x] T1.13 | Verificação final: `npm run check` e `npm run build` no Linux (saída real); `npm run dev` no Linux; roteiro curto de validação no Windows (para eu executar) e registro do resultado.                                                                                                                                                                                                                             | T1.11, T1.12                      | RF-01, RNF-05                             | Resultados anotados em "Notas".                                                     |
 
 ## Fora da Etapa 1 (explicitamente)
 
@@ -53,13 +53,15 @@ Janela transparente, sprite, animação, bandeja, instância única, persistênc
 - Build de produção (`electron .`, `file://`): os mesmos resultados com a CSP estrita; CSS carregado; `window.close()` encerrou o Electron com código 0.
 - O sandbox do Chromium iniciou normalmente apesar de `kernel.apparmor_restrict_unprivileged_userns = 1`.
 
+### Verificações executadas (Windows 11 Pro 10.0.26200, Node 22.23.4, npm 10.9.9) — 2026-10-22
+
+- `npm ci` concluiu, mas **sem o binário do Electron** (`node_modules/electron/dist` ausente; `npm run dev` falhou com `Error: Electron uninstall`). `node node_modules/electron/install.js` baixou o binário e resolveu. Registrado em "Solução de problemas" no README.
+- `npm run check`: typecheck, lint e format:check sem erros; `npm test` com 7 arquivos e 19 testes aprovados.
+- `npm run build`: `out/main/index.js`, `out/preload/main.js`, `out/renderer/` gerados.
+- `npm run dev`, inspecionado via CDP: UI mostra "Fai v0.1.0 · Windows" (obtido por IPC); `typeof require` e `typeof process` são `"undefined"`; `window.fai` tem só `app.getInfo`; `window.open` retorna `null`; `fetch` remoto bloqueado pela CSP de dev.
+- `window.close()` encerrou o processo com código 0; nenhum `electron.exe` ficou ativo.
+- Build de produção (`electron .` sobre `out/`, `file://`, equivalente ao `preview` sem rebuild): mesmos resultados com a CSP estrita; fechou com código 0, sem processos remanescentes.
+
 ### Pendências
 
-- **T1.13, Windows (pendente, executar em casa):**
-  1. `git pull`, `nvm use 22`, `npm ci`.
-  2. `npm run check`: tudo verde?
-  3. `npm run dev`: a janela abre mostrando "Fai v0.1.0 · Windows"?
-  4. Fechar a janela: nenhum processo `electron.exe` fica no Gerenciador de Tarefas?
-  5. `npm run build` e depois `npm run preview`: a janela abre igual?
-  6. Anotar o resultado aqui e marcar T1.13 como `[x]`.
-- **Próximo passo:** depois da validação no Windows, escrever o `tasks.md` da Etapa 2 (instância única, bandeja, `DataStore` JSON, `DesktopIntegration`).
+- **Próximo passo:** escrever o `tasks.md` da Etapa 2 (instância única, bandeja, `DataStore` JSON, `DesktopIntegration`).
