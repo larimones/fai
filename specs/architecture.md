@@ -83,8 +83,10 @@ API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.t
 Um documento JSON em `app.getPath('userData')/fai-data.json` (ADR-0003):
 
 ```json
-{ "schemaVersion": 1, "tasks": [], "reminders": [], "mascot": { "position": null } }
+{ "schemaVersion": 1, "mascot": { "position": null } }
 ```
+
+A v1 traz só o que existe na Etapa 2. Tarefas (`tasks: []`) e lembretes (`reminders: []`) entram por migração nas Etapas 5 e 6, quando seus formatos forem definidos (decisão de 2026-10-22).
 
 - Leitura na inicialização → validação zod → migração para a versão atual.
 - Escrita: fila serializada, _debounce_ curto, `writeFile(tmp)` + `rename(tmp, final)` (com novas tentativas em `EPERM`/`EBUSY` no Windows, comuns com antivírus).

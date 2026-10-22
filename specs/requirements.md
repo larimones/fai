@@ -22,7 +22,7 @@ A aplicação inicia, exibe a janela principal e encerra sem deixar processos.
 
 Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o controle de último recurso.
 
-- CA1 [manual] Há um ícone na bandeja com menu: "Mostrar/ocultar Fai", "Abrir painel", "Sair".
+- CA1 [manual] Há um ícone na bandeja com menu: "Mostrar/ocultar Fai", "Abrir painel", "Sair". A Etapa 2 entrega "Mostrar/ocultar Fai" e "Sair"; "Abrir painel" entra na Etapa 5, junto com o painel (decisão de 2026-10-22).
 - CA2 [manual] "Sair" encerra a aplicação completamente.
 
 ### RF-04 — Mascote transparente e flutuante (Etapa 3)
