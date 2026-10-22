@@ -1,0 +1,23 @@
+import { join } from 'node:path'
+import { BrowserWindow } from 'electron'
+import { secureWebPreferences } from './secure-web-preferences'
+
+export function createMainWindow(
+  rendererEntryUrl: string,
+  options: { devTools: boolean },
+): BrowserWindow {
+  const window = new BrowserWindow({
+    width: 480,
+    height: 320,
+    title: 'Fai',
+    show: false,
+    autoHideMenuBar: true,
+    backgroundColor: '#141432',
+    webPreferences: secureWebPreferences(join(__dirname, '..', 'preload', 'main.js'), options),
+  })
+  window.once('ready-to-show', () => {
+    window.show()
+  })
+  void window.loadURL(rendererEntryUrl)
+  return window
+}

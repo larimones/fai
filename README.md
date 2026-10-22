@@ -2,17 +2,17 @@
 
 Mascote feérica de desktop em pixel art: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Fase de especificação concluída. A Etapa 1 (fundação executável) ainda não foi implementada, então os comandos `npm` abaixo passam a funcionar a partir dela. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
+> **Status:** Etapa 1 (fundação executável) concluída: o app abre uma janela segura com informações vindas do processo principal. A mascote ainda não existe. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
 
 ## Ferramentas necessárias
 
-| Ferramenta | Versão | Windows | Linux | Para quê |
-|---|---|---|---|---|
-| **Git** | 2.40+ | [Git for Windows](https://git-scm.com/download/win) | `sudo apt install git` | Versionamento |
-| **nvm** (gerenciador de versões do Node) | — | [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) (`nvm-setup.exe`) | [nvm](https://github.com/nvm-sh/nvm) | Instalar e alternar o Node |
-| **Node.js** | **22 LTS** (ver `.nvmrc`) | via nvm-windows | via nvm | Runtime de build e testes (Vite exige ≥ 20.19) |
-| **npm** | 10+ (vem com o Node 22) | — | — | Gerenciador de pacotes (ADR-0002) |
-| VS Code (recomendado) | atual | — | — | Editor; extensões: ESLint, Prettier |
+| Ferramenta                               | Versão                               | Windows                                                                              | Linux                                | Para quê                                       |
+| ---------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------ | ------------------------------------ | ---------------------------------------------- |
+| **Git**                                  | 2.40+                                | [Git for Windows](https://git-scm.com/download/win)                                  | `sudo apt install git`               | Versionamento                                  |
+| **nvm** (gerenciador de versões do Node) | —                                    | [nvm-windows](https://github.com/coreybutler/nvm-windows/releases) (`nvm-setup.exe`) | [nvm](https://github.com/nvm-sh/nvm) | Instalar e alternar o Node                     |
+| **Node.js**                              | **22 LTS**, ≥ 22.22.2 (ver `.nvmrc`) | via nvm-windows                                                                      | via nvm                              | Runtime de build e testes (Vite exige ≥ 20.19) |
+| **npm**                                  | 10+ (vem com o Node 22)              | —                                                                                    | —                                    | Gerenciador de pacotes (ADR-0002)              |
+| VS Code (recomendado)                    | atual                                | —                                                                                    | —                                    | Editor; extensões: ESLint, Prettier            |
 
 **Não é necessário** instalar Python, Visual Studio Build Tools nem compiladores C++: o projeto não usa módulos nativos (ADR-0003). O Electron, o electron-vite, o Vite e as demais ferramentas são instalados pelo `npm install`, com versões fixadas no `package-lock.json`.
 
@@ -22,9 +22,9 @@ Ferramentas opcionais para a arte (a partir da Etapa 4, ADR-0005): LibreSprite o
 
 ```powershell
 # 1. Instale Git for Windows e nvm-windows (links acima); abra um novo terminal.
-nvm install 22
+nvm install 22  # se o seu nvm-windows pedir a versão completa: nvm install 22.23.2
 nvm use 22
-node -v        # deve mostrar v22.x
+node -v        # deve mostrar v22.22.2 ou mais nova
 
 # 2. Evite conversões de fim de linha (o repositório usa LF; ver .gitattributes)
 git config --global core.autocrlf false
@@ -48,22 +48,48 @@ No Linux, a transparência da mascote exige um compositor (padrão no GNOME e no
 git clone https://github.com/larimones/fai.git
 cd fai
 nvm use 22
-npm ci         # instalação limpa a partir do lockfile (disponível a partir da Etapa 1)
+npm ci         # instalação limpa a partir do lockfile (baixa também o binário do Electron)
+npm run check  # confirma que está tudo certo
+npm run dev    # abre a Fai
 ```
 
-## Comandos (a partir da Etapa 1)
+## Comandos
 
 Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 
-| Comando | O que faz |
-|---|---|
-| `npm run dev` | Abre o app em modo desenvolvimento (HMR) |
-| `npm run build` | Build de produção, sem empacotar |
-| `npm run typecheck` | Verificação de tipos (TypeScript strict) |
-| `npm run lint` | ESLint |
-| `npm run format` | Prettier |
-| `npm test` | Testes (Vitest) |
-| `npm run check` | typecheck + lint + testes, para rodar antes de cada commit |
+| Comando                           | O que faz                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------- |
+| `npm run dev`                     | Abre o app em modo desenvolvimento, com recarga automática                |
+| `npm run build`                   | Build de produção em `out/`, sem empacotar                                |
+| `npm run preview`                 | Abre o app a partir do build de produção                                  |
+| `npm run typecheck`               | Verificação de tipos (TypeScript strict)                                  |
+| `npm run lint`                    | ESLint, incluindo as regras de dependência entre camadas                  |
+| `npm run format` / `format:check` | Formata / confere a formatação com Prettier                               |
+| `npm test` / `test:watch`         | Testes (Vitest), execução única / modo observação                         |
+| `npm run check`                   | typecheck + lint + format:check + testes, para rodar antes de cada commit |
+
+## Estrutura
+
+```
+src/main/       processo principal: ciclo de vida, janelas, IPC, segurança
+src/preload/    ponte segura (contextBridge) → window.fai
+src/renderer/   interface React
+src/shared/     contrato IPC (canais e schemas zod)
+src/domain/     regras de negócio puras
+tests/          testes de arquitetura
+specs/          especificação (fonte da verdade)
+```
+
+## Segurança
+
+Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O renderer só fala com o processo principal pelas funções de `window.fai`; cada chamada tem o remetente verificado e o payload validado com zod. A CSP bloqueia scripts e conexões externas, e a navegação, as novas janelas e os pedidos de permissão são negados. Detalhes no [ADR-0007](specs/decisions/0007-electron-security-baseline.md).
+
+## Solução de problemas
+
+- **`Cannot read properties of undefined (reading 'isPackaged')` ao rodar `npm run dev`:** a variável de ambiente `ELECTRON_RUN_AS_NODE` está definida (acontece em processos iniciados pelo VS Code). Remova-a: `env -u ELECTRON_RUN_AS_NODE npm run dev` no Linux, ou `Remove-Item Env:ELECTRON_RUN_AS_NODE` no PowerShell.
+- **Linux: erro sobre `chrome-sandbox` / "SUID sandbox helper":** algumas distribuições restringem _user namespaces_. No Ubuntu 24.04 desta máquina funcionou sem ajustes. Se acontecer, siga a [documentação do Electron](https://www.electronjs.org/docs/latest/tutorial/sandbox#linux); **nunca** use `--no-sandbox`.
+- **Linux/Wayland:** a janela principal da Etapa 1 funciona no Wayland. A janela da mascote (Etapa 3) vai exigir XWayland (ADR-0004).
+- **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
 
 ## Trabalhando em mais de uma máquina
 

@@ -1,6 +1,6 @@
 # ADR-0008 — Validação de payloads com zod
 
-- **Status:** proposto
+- **Status:** aceito em 2026-10-22
 - **Data:** 2026-10-22
 
 ## Contexto
@@ -9,11 +9,11 @@ O renderer é tratado como não confiável: todo payload de IPC e todo dado lido
 
 ## Alternativas
 
-| Opção | Prós | Contras |
-|---|---|---|
-| **zod** | Schema → tipo (`z.infer`), mensagens de erro claras, sem dependências transitivas, muito difundido. | Uma dependência de runtime (~dezenas de KB). |
-| Validadores escritos à mão | Zero dependência. | Duplicação tipo/validador, fácil esquecer um campo; mais código para testar. |
-| valibot | Menor que zod. | Menos difundido; API menos familiar. |
+| Opção                      | Prós                                                                                                | Contras                                                                      |
+| -------------------------- | --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| **zod**                    | Schema → tipo (`z.infer`), mensagens de erro claras, sem dependências transitivas, muito difundido. | Uma dependência de runtime (~dezenas de KB).                                 |
+| Validadores escritos à mão | Zero dependência.                                                                                   | Duplicação tipo/validador, fácil esquecer um campo; mais código para testar. |
+| valibot                    | Menor que zod.                                                                                      | Menos difundido; API menos familiar.                                         |
 
 ## Decisão
 

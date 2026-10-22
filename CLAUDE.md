@@ -42,7 +42,7 @@ src/
 specs/         especificação (fonte da verdade)
 ```
 
-Regra de dependência: `renderer → shared, domain`; `preload → shared`; `main → shared, domain`; `domain → nada`. O domínio recebe tempo e IDs por parâmetro (nada de `Date.now()`/`crypto` escondidos).
+Regra de dependência: `renderer → shared, domain`; `preload → shared`; `main → shared, domain`; `shared → domain (somente tipos), zod`; `domain → nada`. ESLint (`no-restricted-imports`) e `tests/architecture/` impõem a regra. O domínio recebe tempo e IDs por parâmetro (nada de `Date.now()`/`crypto` escondidos).
 
 ## Segurança (inegociável)
 
@@ -71,8 +71,14 @@ npm run typecheck    # tsc --noEmit (node + web)
 npm run lint         # ESLint
 npm run format       # Prettier (escrita)
 npm test             # Vitest (execução única)
-npm run check        # typecheck + lint + test — rodar antes de todo commit
+npm run check        # typecheck + lint + format:check + test — rodar antes de todo commit
 ```
+
+Armadilhas conhecidas:
+
+- **TypeScript fica em 6.0.x** até o typescript-eslint suportar a 7 (ADR-0001). Não atualize sozinho.
+- Sem `"type": "module"` no `package.json`: o preload em sandbox precisa ser CommonJS. Configs usam `.mts`.
+- Se o Electron falhar com `Cannot read properties of undefined (reading 'isPackaged')`, a variável `ELECTRON_RUN_AS_NODE=1` está herdada do ambiente (o processo de extensões do VS Code a define). Rode com ela removida, por exemplo `env -u ELECTRON_RUN_AS_NODE npm run dev`.
 
 ## Convenções de código
 

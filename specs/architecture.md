@@ -28,14 +28,14 @@
 
 ## Camadas
 
-| Camada | Pasta | Pode depender de | Responsabilidade |
-|---|---|---|---|
-| Domínio | `src/domain` | nada (TypeScript puro) | Regras puras: tarefas, lembretes, vencimento, máquina de estados da animação, hit-test, migrações de dados. Recebe `now` e `id` por parâmetro. |
-| Contrato | `src/shared` | `zod` | Nomes de canais IPC, schemas de request/response, tipos derivados. |
-| Persistência | `src/main/persistence` | domínio, `node:fs`, `node:path` | Ler/gravar o documento JSON; escrita atômica e serializada; migração; quarentena de arquivo corrompido. |
-| Integração com o SO | `src/main/os` | `electron` | Tudo que muda entre Windows e Linux (ver abaixo). |
-| Aplicação (main) | `src/main/*` | domínio, contrato, persistência, SO | Janelas, IPC, serviços, agendador de lembretes. |
-| UI | `src/renderer` | domínio, contrato (tipos) | React; fala com o main **só** via `window.fai`. |
+| Camada              | Pasta                  | Pode depender de                    | Responsabilidade                                                                                                                               |
+| ------------------- | ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domínio             | `src/domain`           | nada (TypeScript puro)              | Regras puras: tarefas, lembretes, vencimento, máquina de estados da animação, hit-test, migrações de dados. Recebe `now` e `id` por parâmetro. |
+| Contrato            | `src/shared`           | `zod`, tipos do domínio             | Nomes de canais IPC, schemas de request/response, tipos derivados.                                                                             |
+| Persistência        | `src/main/persistence` | domínio, `node:fs`, `node:path`     | Ler/gravar o documento JSON; escrita atômica e serializada; migração; quarentena de arquivo corrompido.                                        |
+| Integração com o SO | `src/main/os`          | `electron`                          | Tudo que muda entre Windows e Linux (ver abaixo).                                                                                              |
+| Aplicação (main)    | `src/main/*`           | domínio, contrato, persistência, SO | Janelas, IPC, serviços, agendador de lembretes.                                                                                                |
+| UI                  | `src/renderer`         | domínio, contrato (tipos)           | React; fala com o main **só** via `window.fai`.                                                                                                |
 
 O domínio não importa `zod`: schemas vivem em `shared` e validam a fronteira; o domínio trabalha com tipos já validados.
 
@@ -51,6 +51,7 @@ O domínio não importa `zod`: schemas vivem em `shared` e validam a fronteira; 
 ## Contrato IPC
 
 Regras:
+
 1. Canais nomeados `dominio:acao`, declarados em `src/shared/ipc/channels.ts` como constantes.
 2. Cada canal tem schema zod de entrada e saída em `src/shared/ipc/schemas.ts`.
 3. Renderer → main por `ipcRenderer.invoke` (request/response) ou `send` (eventos de alta frequência, como arrasto). Main → renderer por `webContents.send` em canais de evento declarados.
@@ -59,21 +60,21 @@ Regras:
 
 Canais (✅ Etapa 1; demais planejados, revisados em cada etapa):
 
-| Canal | Tipo | Janela | Entrada | Saída |
-|---|---|---|---|---|
-| `app:get-info` ✅ | invoke | todas | — | `{ name, version, platform }` |
-| `mascot:set-interactive` | send | mascote | `{ interactive: boolean }` | — |
-| `mascot:drag` | send | mascote | `{ phase: 'start'\|'move'\|'end', screenX, screenY }` | — |
-| `mascot:open-menu` | send | mascote | — | — |
-| `mascot:reaction` | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }` | — |
-| `tasks:list` | invoke | painel | — | `Task[]` |
-| `tasks:create` | invoke | painel | `{ title }` | `Task` |
-| `tasks:set-done` | invoke | painel | `{ id, done }` | `Task` |
-| `tasks:delete` | invoke | painel | `{ id }` | — |
-| `reminders:list` | invoke | painel | — | `Reminder[]` |
-| `reminders:create` | invoke | painel | `{ text, dueAt (ISO 8601) }` | `Reminder` |
-| `reminders:delete` | invoke | painel | `{ id }` | — |
-| `data:changed` | evento main→r | painel | `{ tasks, reminders }` | — |
+| Canal                    | Tipo          | Janela  | Entrada                                               | Saída                         |
+| ------------------------ | ------------- | ------- | ----------------------------------------------------- | ----------------------------- |
+| `app:get-info` ✅        | invoke        | todas   | —                                                     | `{ name, version, platform }` |
+| `mascot:set-interactive` | send          | mascote | `{ interactive: boolean }`                            | —                             |
+| `mascot:drag`            | send          | mascote | `{ phase: 'start'\|'move'\|'end', screenX, screenY }` | —                             |
+| `mascot:open-menu`       | send          | mascote | —                                                     | —                             |
+| `mascot:reaction`        | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                   | —                             |
+| `tasks:list`             | invoke        | painel  | —                                                     | `Task[]`                      |
+| `tasks:create`           | invoke        | painel  | `{ title }`                                           | `Task`                        |
+| `tasks:set-done`         | invoke        | painel  | `{ id, done }`                                        | `Task`                        |
+| `tasks:delete`           | invoke        | painel  | `{ id }`                                              | —                             |
+| `reminders:list`         | invoke        | painel  | —                                                     | `Reminder[]`                  |
+| `reminders:create`       | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                          | `Reminder`                    |
+| `reminders:delete`       | invoke        | painel  | `{ id }`                                              | —                             |
+| `data:changed`           | evento main→r | painel  | `{ tasks, reminders }`                                | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
 
@@ -86,19 +87,19 @@ Um documento JSON em `app.getPath('userData')/fai-data.json` (ADR-0003):
 ```
 
 - Leitura na inicialização → validação zod → migração para a versão atual.
-- Escrita: fila serializada, *debounce* curto, `writeFile(tmp)` + `rename(tmp, final)` (com novas tentativas em `EPERM`/`EBUSY` no Windows, comuns com antivírus).
+- Escrita: fila serializada, _debounce_ curto, `writeFile(tmp)` + `rename(tmp, final)` (com novas tentativas em `EPERM`/`EBUSY` no Windows, comuns com antivírus).
 - Corrompido/versão desconhecida: renomeia para `fai-data.corrupt-<timestamp>.json` e começa vazio.
 
 ## Estratégia multiplataforma
 
 `src/main/os/desktop-integration.ts` define a interface; `createDesktopIntegration(process.platform)` escolhe a implementação. Ela só ganha métodos quando uma etapa precisa deles (sem antecipação). Pontos de variação já conhecidos:
 
-| Necessidade | Windows | Linux |
-|---|---|---|
+| Necessidade                       | Windows                                                              | Linux                                                                              |
+| --------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
 | Cliques atravessando áreas vazias | `setIgnoreMouseEvents(true, { forward: true })` + hit-test por pixel | `forward` não é suportado → janela do tamanho do sprite, sem atravessar (ADR-0004) |
-| Transparência | nativa | exige compositor; Wayland limitado → recomendar X11/XWayland |
-| Notificações | Toast; exige `AppUserModelID` | libnotify via D-Bus |
-| Bandeja | nativa | depende de suporte a AppIndicator/StatusNotifier no ambiente |
+| Transparência                     | nativa                                                               | exige compositor; Wayland limitado → recomendar X11/XWayland                       |
+| Notificações                      | Toast; exige `AppUserModelID`                                        | libnotify via D-Bus                                                                |
+| Bandeja                           | nativa                                                               | depende de suporte a AppIndicator/StatusNotifier no ambiente                       |
 
 Código de plataforma fica **só** ali; o resto do app conversa com a interface. A versão Linux completa vira uma nova implementação da interface.
 
@@ -106,7 +107,7 @@ Código de plataforma fica **só** ali; o resto do app conversa com a interface.
 
 - `app.enableSandbox()`; `webPreferences` seguras centralizadas em uma única fábrica testada.
 - `will-navigate` e `setWindowOpenHandler` negam tudo; `setPermissionRequestHandler` nega tudo.
-- CSP estrita em produção (meta no HTML e cabeçalho via `session.webRequest`).
+- CSP estrita em produção, entregue por `<meta>` gerado no build a partir de `src/main/security/csp.ts` (cabeçalhos não existem em `file://`).
 - Sem `remote`, sem `shell.openExternal` com entrada do renderer.
 - Etapa 7: Electron Fuses e assinatura (se houver certificado) no empacotamento.
 

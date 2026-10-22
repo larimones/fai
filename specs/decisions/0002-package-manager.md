@@ -1,6 +1,6 @@
 # ADR-0002 — Gerenciador de pacotes: npm
 
-- **Status:** proposto
+- **Status:** aceito em 2026-10-22
 - **Data:** 2026-10-22
 
 ## Contexto
@@ -9,11 +9,11 @@ Desenvolvimento em Windows e Linux, uma pessoa, poucas dependências. O ecossist
 
 ## Alternativas
 
-| Opção | Prós | Contras |
-|---|---|---|
-| **npm** | Vem com o Node, zero instalação extra nos dois SOs; `node_modules` plano, que é o que electron-builder espera; scripts de `postinstall` rodam sem configuração. | Instalação mais lenta e mais disco que pnpm. |
-| pnpm | Rápido e econômico; isolamento estrito de dependências. | pnpm 10 bloqueia scripts de instalação por padrão (`onlyBuiltDependencies` para `electron`, `esbuild`); electron-builder costuma exigir `node-linker=hoisted`; mais um ponto de atrito no Windows. |
-| Yarn (Berry) | PnP rápido. | PnP incompatível com Electron/empacotamento sem `nodeLinker: node-modules`; ferramenta extra. |
+| Opção        | Prós                                                                                                                                                            | Contras                                                                                                                                                                                            |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **npm**      | Vem com o Node, zero instalação extra nos dois SOs; `node_modules` plano, que é o que electron-builder espera; scripts de `postinstall` rodam sem configuração. | Instalação mais lenta e mais disco que pnpm.                                                                                                                                                       |
+| pnpm         | Rápido e econômico; isolamento estrito de dependências.                                                                                                         | pnpm 10 bloqueia scripts de instalação por padrão (`onlyBuiltDependencies` para `electron`, `esbuild`); electron-builder costuma exigir `node-linker=hoisted`; mais um ponto de atrito no Windows. |
+| Yarn (Berry) | PnP rápido.                                                                                                                                                     | PnP incompatível com Electron/empacotamento sem `nodeLinker: node-modules`; ferramenta extra.                                                                                                      |
 
 ## Decisão
 

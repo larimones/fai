@@ -26,14 +26,14 @@ Uma pessoa: eu, a desenvolvedora e usuária. Uso diário em Windows (alvo da pri
 
 Paleta inicial (tokens CSS, ajustável quando o design existir):
 
-| Token | Cor | Uso |
-|---|---|---|
-| `--fai-night` | `#141432` | fundo principal |
-| `--fai-indigo` | `#2a2a5e` | superfícies |
-| `--fai-violet` | `#6b4fa3` | destaques secundários |
-| `--fai-purple` | `#9b5fc0` | ações |
-| `--fai-gold` | `#f2c94c` | ênfase, estrelas |
-| `--fai-starlight` | `#f5f0ff` | texto |
+| Token             | Cor       | Uso                   |
+| ----------------- | --------- | --------------------- |
+| `--fai-night`     | `#141432` | fundo principal       |
+| `--fai-indigo`    | `#2a2a5e` | superfícies           |
+| `--fai-violet`    | `#6b4fa3` | destaques secundários |
+| `--fai-purple`    | `#9b5fc0` | ações                 |
+| `--fai-gold`      | `#f2c94c` | ênfase, estrelas      |
+| `--fai-starlight` | `#f5f0ff` | texto                 |
 
 ## Não objetivos (MVP)
 
