@@ -42,7 +42,7 @@ src/
 specs/         especificação (fonte da verdade)
 ```
 
-Regra de dependência: `renderer → shared, domain`; `preload → shared`; `main → shared, domain`; `shared → domain (somente tipos), zod`; `domain → nada`. ESLint (`no-restricted-imports`) e `tests/architecture/` impõem a regra. O domínio recebe tempo e IDs por parâmetro (nada de `Date.now()`/`crypto` escondidos).
+Regra de dependência: `renderer → shared, domain`; `preload → shared`; `main → shared, domain`; `shared → domain (somente tipos), zod`; `domain → nada`; dentro do main, `main/persistence` não importa `electron`. ESLint (`no-restricted-imports`) e `tests/architecture/` impõem a regra. O domínio recebe tempo e IDs por parâmetro (nada de `Date.now()`/`crypto` escondidos).
 
 ## Segurança (inegociável)
 

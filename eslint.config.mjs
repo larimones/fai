@@ -64,6 +64,23 @@ export default defineConfig(
     },
   },
   {
+    files: ['src/main/persistence/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['electron'],
+              message:
+                'A persistência não depende do Electron: receba caminhos e callbacks por parâmetro.',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     files: ['src/domain/**/*.ts'],
     rules: {
       'no-restricted-imports': [

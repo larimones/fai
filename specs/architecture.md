@@ -28,16 +28,16 @@
 
 ## Camadas
 
-| Camada              | Pasta                  | Pode depender de                    | Responsabilidade                                                                                                                               |
-| ------------------- | ---------------------- | ----------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| Domínio             | `src/domain`           | nada (TypeScript puro)              | Regras puras: tarefas, lembretes, vencimento, máquina de estados da animação, hit-test, migrações de dados. Recebe `now` e `id` por parâmetro. |
-| Contrato            | `src/shared`           | `zod`, tipos do domínio             | Nomes de canais IPC, schemas de request/response, tipos derivados.                                                                             |
-| Persistência        | `src/main/persistence` | domínio, `node:fs`, `node:path`     | Ler/gravar o documento JSON; escrita atômica e serializada; migração; quarentena de arquivo corrompido.                                        |
-| Integração com o SO | `src/main/os`          | `electron`                          | Tudo que muda entre Windows e Linux (ver abaixo).                                                                                              |
-| Aplicação (main)    | `src/main/*`           | domínio, contrato, persistência, SO | Janelas, IPC, serviços, agendador de lembretes.                                                                                                |
-| UI                  | `src/renderer`         | domínio, contrato (tipos)           | React; fala com o main **só** via `window.fai`.                                                                                                |
+| Camada              | Pasta                  | Pode depender de                                        | Responsabilidade                                                                                                                               |
+| ------------------- | ---------------------- | ------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| Domínio             | `src/domain`           | nada (TypeScript puro)                                  | Regras puras: tarefas, lembretes, vencimento, máquina de estados da animação, hit-test, migrações de dados. Recebe `now` e `id` por parâmetro. |
+| Contrato            | `src/shared`           | `zod`, tipos do domínio                                 | Nomes de canais IPC, schemas de request/response, tipos derivados.                                                                             |
+| Persistência        | `src/main/persistence` | domínio, `zod`, `node:fs`, `node:path` (sem `electron`) | Ler/gravar o documento JSON; escrita atômica e serializada; migração; quarentena de arquivo corrompido.                                        |
+| Integração com o SO | `src/main/os`          | `electron`                                              | Tudo que muda entre Windows e Linux (ver abaixo).                                                                                              |
+| Aplicação (main)    | `src/main/*`           | domínio, contrato, persistência, SO                     | Janelas, IPC, serviços, agendador de lembretes.                                                                                                |
+| UI                  | `src/renderer`         | domínio, contrato (tipos)                               | React; fala com o main **só** via `window.fai`.                                                                                                |
 
-O domínio não importa `zod`: schemas vivem em `shared` e validam a fronteira; o domínio trabalha com tipos já validados.
+O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` para o IPC, `main/persistence` para o documento JSON); o domínio trabalha com tipos já validados. A persistência não importa `electron` (regra de lint): recebe o caminho do arquivo e callbacks por parâmetro, o que permite testá-la com arquivos reais em diretório temporário.
 
 ## Processos do Electron
 
