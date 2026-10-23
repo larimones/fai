@@ -88,9 +88,15 @@ Um documento JSON em `app.getPath('userData')/fai-data.json` (ADR-0003):
 
 A v1 traz só o que existe na Etapa 2. Tarefas (`tasks: []`) e lembretes (`reminders: []`) entram por migração nas Etapas 5 e 6, quando seus formatos forem definidos (decisão de 2026-10-22).
 
-- Leitura na inicialização → validação zod → migração para a versão atual.
-- Escrita: fila serializada, _debounce_ curto, `writeFile(tmp)` + `rename(tmp, final)` (com novas tentativas em `EPERM`/`EBUSY` no Windows, comuns com antivírus).
-- Corrompido/versão desconhecida: renomeia para `fai-data.corrupt-<timestamp>.json` e começa vazio.
+Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
+
+- **Leitura** (`load()`, na inicialização, antes de criar janelas): envelope zod (`schemaVersion` inteiro positivo) → `migrateToCurrent` (domínio) → schema estrito da versão atual. Nunca rejeita; devolve um `status`:
+  - `created` (arquivo ausente), `loaded`, `migrated`;
+  - `quarantined`: JSON inválido, documento inválido, versão futura ou sem caminho de migração → o arquivo é renomeado para `fai-data.corrupt-<AAAAMMDDTHHMMSSZ>.json` (UTC, sem `:`), o app começa vazio e avisa com um diálogo;
+  - `unavailable`: o arquivo existe, mas não pôde ser lido nem renomeado → o app começa vazio, avisa e **não grava** nesta execução, para não sobrescrever o arquivo.
+- **Escrita** (`save()`): _debounce_ de 200 ms (o último dado vence), fila serializada, `writeFile(fai-data.json.tmp)` + `rename` para o final; novas tentativas em `EPERM`/`EBUSY`/`EACCES` após 50, 100, 200 e 400 ms (antivírus no Windows). Falha persistente → `onError`, `.tmp` removido, arquivo anterior intacto.
+- **Inicialização e encerramento** (`startup.ts`): `created`, `migrated` e `quarantined` gravam o documento na hora; `before-quit` espera o `flush()` antes de encerrar.
+- Enquanto só existe a v1, o documento é validado uma vez, depois da migração. Com a v2, o schema da versão de origem também valida **antes** de migrar.
 
 ## Estratégia multiplataforma
 
@@ -104,6 +110,8 @@ A v1 traz só o que existe na Etapa 2. Tarefas (`tasks: []`) e lembretes (`remin
 | Bandeja                           | nativa                                                               | depende de suporte a AppIndicator/StatusNotifier no ambiente                       |
 
 Código de plataforma fica **só** ali; o resto do app conversa com a interface. A versão Linux completa vira uma nova implementação da interface.
+
+Métodos atuais (Etapa 2): `createTray({ icon, tooltip, menu, onActivate })`. No Windows, o clique esquerdo chama `onActivate` (mostrar/ocultar a Fai) e o direito abre o menu; no Linux só há o menu, porque o AppIndicator não emite `click`. Outras plataformas são recusadas com erro. Os ícones ficam em `resources/` e são carregados de `join(app.getAppPath(), 'resources', …)`.
 
 ## Segurança (resumo; detalhes no ADR-0007)
 

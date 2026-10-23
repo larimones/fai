@@ -2,7 +2,7 @@
 
 Mascote feérica de desktop em pixel art: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 1 (fundação executável) concluída: o app abre uma janela segura com informações vindas do processo principal. A mascote ainda não existe. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
+> **Status:** Etapa 2 (base do aplicativo residente) em andamento: instância única, ícone e menu na bandeja e dados salvos localmente. A janela atual é provisória; a mascote chega na Etapa 3. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -68,15 +68,39 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 | `npm test` / `test:watch`         | Testes (Vitest), execução única / modo observação                         |
 | `npm run check`                   | typecheck + lint + format:check + testes, para rodar antes de cada commit |
 
+## Usando a Fai (por enquanto)
+
+- **Janela:** mostra o nome, a versão e o sistema. Até a Etapa 3 ela faz o papel da mascote. Fechá-la encerra o app.
+- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a janela (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai" e "Sair".
+- **Instância única:** abrir o app de novo não cria outra Fai; a janela que já existe volta para a frente.
+
+## Seus dados
+
+Tudo fica em um arquivo JSON local, sem rede (ADR-0003):
+
+| Sistema | Arquivo                                                                     |
+| ------- | --------------------------------------------------------------------------- |
+| Windows | `%APPDATA%\Fai\fai-data.json` (ex.: `C:\Users\<você>\AppData\Roaming\Fai\`) |
+| Linux   | `~/.config/Fai/fai-data.json` (ou `$XDG_CONFIG_HOME/Fai/`)                  |
+
+`npm run dev`, `npm run preview` e o build usam o mesmo arquivo.
+
+- **Arquivo danificado:** se o arquivo não puder ser lido, a Fai guarda uma cópia como `fai-data.corrupt-<data>.json` na mesma pasta, começa do zero e avisa. A data no nome está em UTC (sufixo `Z`). Se o arquivo existir mas não puder ser lido nem movido (por exemplo, por permissão), a Fai avisa e não salva nada naquela execução, para não sobrescrevê-lo.
+- **Começar do zero:** feche a Fai (menu da bandeja → "Sair") e apague ou renomeie o `fai-data.json`. Ele é recriado no próximo início.
+- **Cópia de segurança:** com a Fai fechada, copie o `fai-data.json`.
+
 ## Estrutura
 
 ```
-src/main/       processo principal: ciclo de vida, janelas, IPC, segurança
+src/main/       processo principal: ciclo de vida, janelas, bandeja, IPC, segurança
+  os/           integração com o SO (DesktopIntegration: Windows e Linux)
+  persistence/  DataStore: leitura, gravação atômica, migração e quarentena do JSON
 src/preload/    ponte segura (contextBridge) → window.fai
 src/renderer/   interface React
 src/shared/     contrato IPC (canais e schemas zod)
 src/domain/     regras de negócio puras
 tests/          testes de arquitetura
+resources/      ícones do app e da bandeja (e as artes originais)
 specs/          especificação (fonte da verdade)
 ```
 
@@ -88,6 +112,8 @@ Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O re
 
 - **`Cannot read properties of undefined (reading 'isPackaged')` ao rodar `npm run dev`:** a variável de ambiente `ELECTRON_RUN_AS_NODE` está definida (acontece em processos iniciados pelo VS Code). Remova-a: `env -u ELECTRON_RUN_AS_NODE npm run dev` no Linux, ou `Remove-Item Env:ELECTRON_RUN_AS_NODE` no PowerShell.
 - **Linux: erro sobre `chrome-sandbox` / "SUID sandbox helper":** algumas distribuições restringem _user namespaces_. No Ubuntu 24.04 desta máquina funcionou sem ajustes. Se acontecer, siga a [documentação do Electron](https://www.electronjs.org/docs/latest/tutorial/sandbox#linux); **nunca** use `--no-sandbox`.
+- **Windows: a estrela não aparece na bandeja:** o Windows esconde ícones novos na setinha **^** perto do relógio. Para deixá-la sempre visível, arraste-a para a barra ou ative-a em Configurações → Personalização → Barra de tarefas → Outros ícones da bandeja do sistema.
+- **Linux: a estrela não aparece na bandeja:** o ícone exige suporte a AppIndicator/StatusNotifier. No Ubuntu, a extensão "Ubuntu AppIndicators" já vem ativa; em outros GNOME, instale a extensão "AppIndicator and KStatusNotifierItem Support". KDE tem suporte nativo. Sem a bandeja, o app funciona, mas só fecha pela janela.
 - **Linux/Wayland:** a janela principal da Etapa 1 funciona no Wayland. A janela da mascote (Etapa 3) vai exigir XWayland (ADR-0004).
 - **`Error: Electron uninstall` ao rodar `npm run dev`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Rode `node node_modules/electron/install.js` para baixá-lo e tente de novo.
 - **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
