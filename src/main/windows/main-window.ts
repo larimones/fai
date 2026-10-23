@@ -4,16 +4,19 @@ import { secureWebPreferences } from './secure-web-preferences'
 
 export function createMainWindow(
   rendererEntryUrl: string,
-  options: { devTools: boolean },
+  options: { devTools: boolean; icon: string },
 ): BrowserWindow {
   const window = new BrowserWindow({
     width: 480,
     height: 320,
     title: 'Fai',
+    icon: options.icon,
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#141432',
-    webPreferences: secureWebPreferences(join(__dirname, '..', 'preload', 'main.js'), options),
+    webPreferences: secureWebPreferences(join(__dirname, '..', 'preload', 'main.js'), {
+      devTools: options.devTools,
+    }),
   })
   window.once('ready-to-show', () => {
     window.show()

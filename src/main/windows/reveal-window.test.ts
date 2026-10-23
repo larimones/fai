@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { revealWindow, type RevealableWindow } from './reveal-window'
+import { revealWindow, toggleWindow, type ToggleableWindow } from './reveal-window'
 
 function fakeWindow(state: { minimized: boolean; visible: boolean }) {
   return {
@@ -8,7 +8,8 @@ function fakeWindow(state: { minimized: boolean; visible: boolean }) {
     isVisible: vi.fn(() => state.visible),
     show: vi.fn(),
     focus: vi.fn(),
-  } satisfies RevealableWindow
+    hide: vi.fn(),
+  } satisfies ToggleableWindow
 }
 
 describe('revealWindow (RF-02)', () => {
@@ -40,5 +41,29 @@ describe('revealWindow (RF-02)', () => {
     expect(window.show.mock.invocationCallOrder[0]).toBeLessThan(
       window.focus.mock.invocationCallOrder[0] ?? 0,
     )
+  })
+})
+
+describe('toggleWindow (RF-03)', () => {
+  it('hides a window the user can see', () => {
+    const window = fakeWindow({ minimized: false, visible: true })
+
+    toggleWindow(window)
+
+    expect(window.hide).toHaveBeenCalledOnce()
+    expect(window.focus).not.toHaveBeenCalled()
+  })
+
+  it('brings back a hidden or minimized window', () => {
+    const hidden = fakeWindow({ minimized: false, visible: false })
+    const minimized = fakeWindow({ minimized: true, visible: true })
+
+    toggleWindow(hidden)
+    toggleWindow(minimized)
+
+    expect(hidden.show).toHaveBeenCalledOnce()
+    expect(minimized.restore).toHaveBeenCalledOnce()
+    expect(hidden.hide).not.toHaveBeenCalled()
+    expect(minimized.hide).not.toHaveBeenCalled()
   })
 })
