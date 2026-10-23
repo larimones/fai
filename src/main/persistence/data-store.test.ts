@@ -26,6 +26,7 @@ describe('createDataStore — writing (RNF-07 CA1, RF-17 CA2)', () => {
     onError = vi.fn<(error: unknown) => void>()
     writes = []
     realFs = {
+      readFile,
       writeFile: async (path, data, encoding) => {
         writes.push(data)
         await writeFile(path, data, encoding)
