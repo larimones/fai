@@ -1,8 +1,19 @@
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { app, BrowserWindow, ipcMain, Menu, nativeImage, session, type Tray } from 'electron'
+import {
+  app,
+  BrowserWindow,
+  dialog,
+  ipcMain,
+  Menu,
+  nativeImage,
+  session,
+  type Tray,
+} from 'electron'
 import { registerIpcHandlers } from './ipc/register-handlers'
 import { createDesktopIntegration } from './os/desktop-integration'
+import { createDataStore } from './persistence/data-store'
+import { describeLoadProblem, flushBeforeQuit, needsInitialSave } from './persistence/startup'
 import { createAppUrlMatcher } from './security/app-url'
 import { hardenSession, hardenWebContents } from './security/harden'
 import { createSenderGuard } from './security/sender-guard'
@@ -51,8 +62,23 @@ function startApp(): void {
     tray?.destroy()
   })
 
-  void app.whenReady().then(() => {
+  void app.whenReady().then(async () => {
     hardenSession(session.defaultSession)
+
+    const dataFilePath = join(app.getPath('userData'), 'fai-data.json')
+    const dataStore = createDataStore({
+      filePath: dataFilePath,
+      onError: (error) => {
+        console.error('Fai: falha ao gravar os dados.', error)
+      },
+    })
+    flushBeforeQuit(app, dataStore)
+    const loaded = await dataStore.load()
+    if (needsInitialSave(loaded)) {
+      dataStore.save(loaded.data)
+      void dataStore.flush()
+    }
+
     registerIpcHandlers(
       ipcMain,
       createSenderGuard(isAppUrl, (sender) => BrowserWindow.fromWebContents(sender) !== null),
@@ -83,5 +109,12 @@ function startApp(): void {
       menu: Menu.buildFromTemplate(buildTrayMenu({ toggleFai, quit })),
       onActivate: toggleFai,
     })
+
+    const notice = describeLoadProblem(loaded, dataFilePath)
+    if (notice !== undefined) {
+      console.warn(`Fai: ${notice.message}.`, loaded)
+      // Not awaited: the app keeps starting while the warning is on screen.
+      void dialog.showMessageBox({ type: 'warning', title: 'Fai', buttons: ['OK'], ...notice })
+    }
   })
 }
