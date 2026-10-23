@@ -11,9 +11,9 @@
     "node": ">=22.22.2"
   },
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "electron-vite dev -- --ozone-platform=x11",
     "build": "electron-vite build",
-    "preview": "electron-vite preview",
+    "preview": "electron-vite preview -- --ozone-platform=x11",
     "typecheck": "tsc --noEmit -p tsconfig.node.json && tsc --noEmit -p tsconfig.web.json",
     "lint": "eslint .",
     "format": "prettier --write .",

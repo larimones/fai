@@ -102,12 +102,12 @@ Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
 
 `src/main/os/desktop-integration.ts` define a interface; `createDesktopIntegration(process.platform)` escolhe a implementação. Ela só ganha métodos quando uma etapa precisa deles (sem antecipação). Pontos de variação já conhecidos:
 
-| Necessidade                       | Windows                                                              | Linux                                                                              |
-| --------------------------------- | -------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Cliques atravessando áreas vazias | `setIgnoreMouseEvents(true, { forward: true })` + hit-test por pixel | `forward` não é suportado → janela do tamanho do sprite, sem atravessar (ADR-0004) |
-| Transparência                     | nativa                                                               | exige compositor; Wayland limitado → recomendar X11/XWayland                       |
-| Notificações                      | Toast; exige `AppUserModelID`                                        | libnotify via D-Bus                                                                |
-| Bandeja                           | nativa                                                               | depende de suporte a AppIndicator/StatusNotifier no ambiente                       |
+| Necessidade                       | Windows                                                              | Linux                                                                               |
+| --------------------------------- | -------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Cliques atravessando áreas vazias | `setIgnoreMouseEvents(true, { forward: true })` + hit-test por pixel | `forward` não é suportado → janela do tamanho do sprite, sem atravessar (ADR-0004)  |
+| Transparência                     | nativa                                                               | exige compositor; Wayland limitado → XWayland via `--ozone-platform=x11` (ADR-0010) |
+| Notificações                      | Toast; exige `AppUserModelID`                                        | libnotify via D-Bus                                                                 |
+| Bandeja                           | nativa                                                               | depende de suporte a AppIndicator/StatusNotifier no ambiente                        |
 
 Código de plataforma fica **só** ali; o resto do app conversa com a interface. A versão Linux completa vira uma nova implementação da interface.
 
