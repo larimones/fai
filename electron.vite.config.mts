@@ -33,7 +33,7 @@ export default defineConfig({
       // Sandboxed preloads cannot require() node_modules, so dependencies (zod) are bundled.
       externalizeDeps: false,
       rolldownOptions: {
-        input: { main: resolve('src/preload/main.ts') },
+        input: { mascot: resolve('src/preload/mascot.ts') },
       },
     },
   },

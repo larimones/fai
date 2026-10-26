@@ -4,7 +4,10 @@ import type { FaiApi } from '@shared/ipc/api'
 import { App } from './App'
 
 function installFakeApi(getInfo: FaiApi['app']['getInfo']): void {
-  vi.stubGlobal('fai', { app: { getInfo } } satisfies FaiApi)
+  vi.stubGlobal('fai', {
+    app: { getInfo },
+    mascot: { setInteractive: vi.fn(), drag: vi.fn() },
+  } satisfies FaiApi)
 }
 
 describe('App', () => {

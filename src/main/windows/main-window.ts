@@ -14,7 +14,7 @@ export function createMainWindow(
     show: false,
     autoHideMenuBar: true,
     backgroundColor: '#141432',
-    webPreferences: secureWebPreferences(join(__dirname, '..', 'preload', 'main.js'), {
+    webPreferences: secureWebPreferences(join(__dirname, '..', 'preload', 'mascot.js'), {
       devTools: options.devTools,
     }),
   })

@@ -23,9 +23,13 @@ export interface DragMessage {
   readonly phase: DragPhase
 }
 
-/** The whole surface exposed to the main window as `window.fai`. */
+/** The whole surface exposed to the mascot window as `window.fai`. */
 export interface FaiApi {
   readonly app: {
     getInfo(): Promise<IpcResult<AppInfo>>
+  }
+  readonly mascot: {
+    setInteractive(interactive: boolean): void
+    drag(phase: DragPhase): void
   }
 }

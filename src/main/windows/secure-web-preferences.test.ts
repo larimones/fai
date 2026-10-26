@@ -3,8 +3,8 @@ import { secureWebPreferences } from './secure-web-preferences'
 
 describe('secureWebPreferences (RNF-01 CA1)', () => {
   it('isolates the renderer', () => {
-    expect(secureWebPreferences('/app/preload/main.js', { devTools: false })).toMatchObject({
-      preload: '/app/preload/main.js',
+    expect(secureWebPreferences('/app/preload/mascot.js', { devTools: false })).toMatchObject({
+      preload: '/app/preload/mascot.js',
       contextIsolation: true,
       nodeIntegration: false,
       nodeIntegrationInWorker: false,
