@@ -10,4 +10,12 @@ export const windowsDesktopIntegration: DesktopIntegration = {
     tray.on('click', onActivate)
     return tray
   },
+  setClickThrough(window, enabled) {
+    if (enabled) {
+      // `forward` keeps mouse moves coming, so the renderer can tell when the cursor is back on the drawing.
+      window.setIgnoreMouseEvents(true, { forward: true })
+    } else {
+      window.setIgnoreMouseEvents(false)
+    }
+  },
 }

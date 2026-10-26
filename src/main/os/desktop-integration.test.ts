@@ -1,4 +1,4 @@
-import type { Menu, NativeImage } from 'electron'
+import type { BrowserWindow, Menu, NativeImage } from 'electron'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { createDesktopIntegration, type TrayOptions } from './desktop-integration'
 
@@ -65,5 +65,31 @@ describe('createDesktopIntegration (RNF-05 CA2)', () => {
     expect(lastTray().setToolTip).toHaveBeenCalledExactlyOnceWith('Fai')
     expect(lastTray().setContextMenu).toHaveBeenCalledExactlyOnceWith(options.menu)
     expect(lastTray().on).not.toHaveBeenCalled()
+  })
+})
+
+describe('setClickThrough (RF-05)', () => {
+  function fakeWindow() {
+    return { setIgnoreMouseEvents: vi.fn() } satisfies Pick<BrowserWindow, 'setIgnoreMouseEvents'>
+  }
+
+  it('on Windows, ignores clicks but keeps forwarding mouse moves', () => {
+    const window = fakeWindow()
+    const integration = createDesktopIntegration('win32')
+
+    integration.setClickThrough(window, true)
+    integration.setClickThrough(window, false)
+
+    expect(window.setIgnoreMouseEvents.mock.calls).toEqual([[true, { forward: true }], [false]])
+  })
+
+  it('on Linux, leaves the window receiving clicks', () => {
+    const window = fakeWindow()
+    const integration = createDesktopIntegration('linux')
+
+    integration.setClickThrough(window, true)
+    integration.setClickThrough(window, false)
+
+    expect(window.setIgnoreMouseEvents).not.toHaveBeenCalled()
   })
 })

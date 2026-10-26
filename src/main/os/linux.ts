@@ -9,4 +9,8 @@ export const linuxDesktopIntegration: DesktopIntegration = {
     tray.setContextMenu(menu)
     return tray
   },
+  setClickThrough() {
+    // Linux has no `forward`: ignoring the mouse would also stop the moves the hit-test needs,
+    // so the whole window keeps receiving clicks (ADR-0004).
+  },
 }

@@ -1,4 +1,4 @@
-import type { Menu, NativeImage, Tray } from 'electron'
+import type { BrowserWindow, Menu, NativeImage, Tray } from 'electron'
 import { linuxDesktopIntegration } from './linux'
 import { windowsDesktopIntegration } from './windows'
 
@@ -16,6 +16,11 @@ export interface TrayOptions {
  */
 export interface DesktopIntegration {
   createTray(options: TrayOptions): Tray
+  /**
+   * Lets clicks pass through the window to whatever is behind it, while the
+   * window keeps receiving mouse moves for its hit-test (ADR-0004).
+   */
+  setClickThrough(window: Pick<BrowserWindow, 'setIgnoreMouseEvents'>, enabled: boolean): void
 }
 
 export function createDesktopIntegration(platform: NodeJS.Platform): DesktopIntegration {

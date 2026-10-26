@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import type { AppInfo } from '@domain/app-info'
+import type { DragMessage, SetInteractiveMessage } from './api'
 import { IpcChannels } from './channels'
 
 export interface InvokeDefinition<Request, Response> {
@@ -19,4 +20,14 @@ export const invokeContract = {
     request: z.undefined(),
     response: appInfoSchema,
   } satisfies InvokeDefinition<undefined, AppInfo>,
+}
+
+/** Payload schemas for each `send` channel (renderer → main, no reply), validated in the main process. */
+export const sendContract = {
+  [IpcChannels.mascotSetInteractive]: z.strictObject({
+    interactive: z.boolean(),
+  }) satisfies z.ZodType<SetInteractiveMessage>,
+  [IpcChannels.mascotDrag]: z.strictObject({
+    phase: z.enum(['start', 'move', 'end']),
+  }) satisfies z.ZodType<DragMessage>,
 }

@@ -2,7 +2,10 @@ import type { IpcMainInvokeEvent } from 'electron'
 import type { IpcErrorCode, IpcResult } from '@shared/ipc/api'
 import type { InvokeDefinition } from '@shared/ipc/schemas'
 
-export type SenderGuard = (event: IpcMainInvokeEvent) => boolean
+/** The part of an IPC event that identifies who sent it; shared by `invoke` and `send` events. */
+export type IpcSenderEvent = Pick<IpcMainInvokeEvent, 'sender' | 'senderFrame'>
+
+export type SenderGuard = (event: IpcSenderEvent) => boolean
 
 function failure(code: IpcErrorCode, message: string): IpcResult<never> {
   return { ok: false, error: { code, message } }
