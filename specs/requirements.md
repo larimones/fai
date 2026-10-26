@@ -48,7 +48,7 @@ Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o c
 
 ### RF-08 — Animação contínua (Etapa 4)
 
-- CA1 [manual] Em repouso, a Fai executa uma animação _idle_ em loop, com pixels nítidos (sem borrão) em escala 100%, 125% e 150% do Windows.
+- CA1 [manual] Em repouso, a Fai executa uma animação _idle_ em loop, sem serrilhado nem borrão perceptível em escala 100%, 125% e 150% do Windows (ADR-0011; antes: "pixels nítidos", da época da pixel art).
 - CA2 [auto] A máquina de estados de animação retorna o quadro correto para um instante dado, conforme as durações do metadado do sprite sheet.
 
 ### RF-09 — Reações a cliques (Etapa 4)

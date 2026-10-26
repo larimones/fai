@@ -1,6 +1,6 @@
 # ADR-0005 — Técnica de animação: sprite sheet em canvas 2D
 
-- **Status:** aceito em 2026-10-22 (implementação na Etapa 4)
+- **Status:** aceito em 2026-10-22 (implementação na Etapa 4); as regras de pixel art foram substituídas pelo ADR-0011 em 2026-10-26
 - **Data:** 2026-10-22
 
 ## Conceitos (para quem nunca animou sprites)
@@ -29,7 +29,9 @@
 - **Renderer:** laço `requestAnimationFrame` que só redesenha quando o quadro muda; pausa quando a janela está oculta.
 - **Hit-test:** `getImageData` do pixel sob o cursor (alfa > limiar).
 
-### Pixel art nítido (regras)
+### Pixel art nítido (regras) — substituídas pelo ADR-0011
+
+A Fai passou a ser uma ilustração suave (ADR-0011). As regras abaixo ficam como histórico.
 
 1. Desenhar em tamanho pequeno e ampliar por **fator inteiro**. Decidido em 2026-10-26: quadros de **32×32 px** (o tamanho dos quadros desenhados pela dona do projeto) ampliados **×4** (128 px lógicos). A sugestão inicial era 48×48.
 2. `ctx.imageSmoothingEnabled = false` e `image-rendering: pixelated` no CSS.

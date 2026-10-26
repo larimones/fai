@@ -1,6 +1,6 @@
 # Fai ✨
 
-Mascote feérica de desktop em pixel art: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
+Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
 > **Status:** Etapa 2 (base do aplicativo residente) concluída: instância única, ícone e menu na bandeja e dados salvos localmente. A janela atual é provisória; a mascote chega na Etapa 3. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
 

@@ -45,7 +45,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
 - **Preload** (um por tipo de janela, princípio do menor privilégio): roda em sandbox; só importa `electron` (`contextBridge`, `ipcRenderer`) e o contrato. Expõe funções nomeadas e tipadas.
 - **Renderer**: React sem Node. Janelas:
   - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Na Etapa 3 ela é substituída pela janela da mascote; na Etapa 5 surge o painel.
-  - **Mascote (Etapa 3)**: 128×128 px lógicos, transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
+  - **Mascote (Etapa 3)**: 160×160 px lógicos (ADR-0011), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
   - **Painel (Etapa 5)**: janela pequena, sem barra de tarefas, para tarefas e lembretes.
 
 ## Contrato IPC

@@ -9,7 +9,7 @@ A Fai precisa parecer "solta" na tela: sem moldura, fundo transparente, acima da
 
 ## Decisão
 
-Uma `BrowserWindow` dedicada, pequena, de tamanho fixo: **128×128 px lógicos**, o sprite de 32×32 ampliado ×4 (ajuste de 2026-10-26, ver ADR-0005), com:
+Uma `BrowserWindow` dedicada, pequena, de tamanho fixo: **160×160 px lógicos** (ajuste de 2026-10-26: a Fai é uma ilustração, ver ADR-0011), com:
 
 ```ts
 {
@@ -39,7 +39,7 @@ _Ajuste de 2026-10-26:_ a versão anterior mandava `screenX/screenY` do renderer
 
 - `transparent: true` não combina com redimensionamento pelas bordas nem com maximizar (não precisamos de nenhum dos dois).
 - Abrir o DevTools acoplado quebra a transparência; usar `mode: 'detach'`.
-- Escala de tela fracionária (125%, 150%) pode borrar pixel art; tratado no ADR-0005.
+- Escala de tela fracionária (125%, 150%) pode borrar o desenho; tratado no ADR-0011 (quadros com o dobro da resolução) e, na Etapa 4, com o ajuste pelo `devicePixelRatio`.
 - Apps em tela cheia exclusiva (jogos) ficam por cima da Fai — aceitável e até desejável (discrição).
 - `focusable: false` impede teclado na janela da mascote; toda entrada de texto fica no painel.
 

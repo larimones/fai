@@ -4,7 +4,7 @@ Regras permanentes do projeto. Valem para toda sessão de trabalho. Em caso de c
 
 ## O que é
 
-A Fai é uma mascote feérica de desktop em pixel art (Electron + React + TypeScript). Primeiro alvo de entrega: **Windows**. O Linux deve continuar funcionando em desenvolvimento.
+A Fai é uma mascote feérica de desktop, ilustrada (Electron + React + TypeScript). Primeiro alvo de entrega: **Windows**. O Linux deve continuar funcionando em desenvolvimento.
 
 ## Processo: Spec-Driven Development
 

@@ -2,7 +2,7 @@
 
 ## Visão
 
-A Fai é uma pequena fada em pixel art que flutua sobre as janelas do desktop. Ela é carinhosa e acolhedora: reage quando recebe um clique, pode ser arrastada para qualquer canto e ajuda com tarefas e lembretes do dia a dia. Deve dar vontade de usar sem atrapalhar o trabalho.
+A Fai é uma pequena fada ilustrada que flutua sobre as janelas do desktop. Ela é carinhosa e acolhedora: reage quando recebe um clique, pode ser arrastada para qualquer canto e ajuda com tarefas e lembretes do dia a dia. Deve dar vontade de usar sem atrapalhar o trabalho.
 
 ## Público
 
@@ -19,7 +19,7 @@ Uma pessoa: eu, a desenvolvedora e usuária. Uso diário em Windows (alvo da pri
 
 ## Direção visual
 
-- Estética feérica celestial em pixel art retrô.
+- Estética feérica celestial, ilustrada em estilo adesivo (ADR-0011; a ideia inicial era pixel art retrô).
 - Paleta: azul-noturno, roxo, púrpura, dourado e estrelas.
 - Interface delicada, mas legível (contraste adequado) e discreta.
 - Somente assets locais.
