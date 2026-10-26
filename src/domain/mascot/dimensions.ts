@@ -1,13 +1,13 @@
 import type { Size } from './geometry'
 
-/** Width and height of each sprite frame, in sprite pixels (ADR-0005). */
-export const SPRITE_SIZE_PX = 32
+/** Width and height of each sprite frame, in image pixels (ADR-0011). */
+export const FRAME_SIZE_PX = 320
 
-/** Whole-number zoom from sprite pixels to logical pixels, so pixel art stays sharp (ADR-0005). */
-export const SPRITE_SCALE = 4
+/** The mascot window, in logical pixels (ADR-0004, ADR-0011). */
+export const MASCOT_WINDOW_SIZE: Size = { width: 160, height: 160 }
 
-/** The mascot window is exactly one scaled frame (ADR-0004). */
-export const MASCOT_WINDOW_SIZE: Size = {
-  width: SPRITE_SIZE_PX * SPRITE_SCALE,
-  height: SPRITE_SIZE_PX * SPRITE_SCALE,
-}
+/**
+ * From frame pixels to window pixels. Frames have twice the window's resolution
+ * so the drawing stays sharp at display scales up to 200%.
+ */
+export const FRAME_TO_WINDOW_SCALE = MASCOT_WINDOW_SIZE.width / FRAME_SIZE_PX

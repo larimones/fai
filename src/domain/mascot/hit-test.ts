@@ -1,4 +1,4 @@
-/** Opacity of each sprite pixel, row by row: one value from 0 to 255 per pixel. */
+/** Opacity of each frame pixel, row by row: one value from 0 to 255 per pixel. */
 export interface AlphaMask {
   readonly width: number
   readonly height: number
@@ -12,12 +12,12 @@ export interface WindowPoint {
 }
 
 /**
- * Pixels at or below this opacity let clicks through (RF-05). A floor shadow of
- * 40–50% opacity would stay click-through without changing it.
+ * Pixels at or below this opacity let clicks through (RF-05): the soft edge of the
+ * drawing, and a future floor shadow of 40–50% opacity.
  */
 export const HIT_ALPHA_THRESHOLD = 128
 
-/** Whether the window pixel under `point` belongs to the drawing, for a sprite scaled by `scale`. */
+/** Whether the window pixel under `point` belongs to the drawing, for a frame drawn at `scale` (window px per frame px). */
 export function isInteractiveAt(mask: AlphaMask, point: WindowPoint, scale: number): boolean {
   const column = Math.floor(point.x / scale)
   const row = Math.floor(point.y / scale)

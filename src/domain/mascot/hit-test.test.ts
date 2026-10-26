@@ -25,6 +25,12 @@ describe('isInteractiveAt (RF-05 CA3)', () => {
     expect(isInteractiveAt(mask, { x: 11.5, y: 7.5 }, 4)).toBe(true)
   })
 
+  it('reads the right frame pixel when the frame is drawn at half size', () => {
+    expect(isInteractiveAt(mask, { x: 0.4, y: 0.4 }, 0.5)).toBe(true)
+    expect(isInteractiveAt(mask, { x: 0.5, y: 0 }, 0.5)).toBe(false)
+    expect(isInteractiveAt(mask, { x: 1.4, y: 0.5 }, 0.5)).toBe(true)
+  })
+
   it('is never interactive outside the sprite', () => {
     expect(isInteractiveAt(mask, { x: -0.5, y: 0 }, 4)).toBe(false)
     expect(isInteractiveAt(mask, { x: 0, y: -1 }, 4)).toBe(false)

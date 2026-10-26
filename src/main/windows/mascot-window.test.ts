@@ -8,8 +8,8 @@ describe('mascotWindowOptions (RF-04)', () => {
     devTools: false,
   })
 
-  it('places a 128×128 window at the given position', () => {
-    expect(options).toMatchObject({ x: -300, y: 840, width: 128, height: 128 })
+  it('places a 160×160 window at the given position', () => {
+    expect(options).toMatchObject({ x: -300, y: 840, width: 160, height: 160 })
     expect(options.useContentSize).toBe(true)
   })
 
