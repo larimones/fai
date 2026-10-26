@@ -9,7 +9,7 @@ A Fai precisa parecer "solta" na tela: sem moldura, fundo transparente, acima da
 
 ## Decisão
 
-Uma `BrowserWindow` dedicada, pequena (tamanho fixo, ex.: 192×192 px lógicos, ajustado ao sprite final), com:
+Uma `BrowserWindow` dedicada, pequena, de tamanho fixo: **128×128 px lógicos**, o sprite de 32×32 ampliado ×4 (ajuste de 2026-10-26, ver ADR-0005), com:
 
 ```ts
 {
@@ -29,7 +29,9 @@ Uma `BrowserWindow` dedicada, pequena (tamanho fixo, ex.: 192×192 px lógicos, 
 
 ### Arrasto
 
-Não usamos `-webkit-app-region: drag`: no Windows a região de arrasto engole os eventos de mouse (perderíamos clique e menu) e não combina com o click-through. Em vez disso, o renderer envia `mascot:drag` (`start`/`move`/`end`) com `screenX/screenY`; o main calcula o deslocamento e chama `win.setPosition(x, y)` com inteiros. Mantemos tamanho fixo e só mudamos posição (no Windows, `setBounds` entre monitores com DPI diferente pode alterar o tamanho da janela).
+Não usamos `-webkit-app-region: drag`: no Windows a região de arrasto engole os eventos de mouse (perderíamos clique e menu) e não combina com o click-through. Em vez disso, o renderer envia `mascot:drag` com a fase (`start`/`move`/`end`) e o main lê o cursor com `screen.getCursorScreenPoint()`, calcula o deslocamento desde o início e chama `win.setPosition(x, y)` com inteiros. A janela só começa a se mover depois de 4 px de deslocamento (abaixo disso é clique, RF-06 CA2).
+
+_Ajuste de 2026-10-26:_ a versão anterior mandava `screenX/screenY` do renderer. Essas coordenadas saltam quando a janela cruza monitores com escalas diferentes (o renderer passa a medir na escala do outro monitor); o cursor lido no main está sempre no mesmo sistema de coordenadas de `setPosition`. Mantemos tamanho fixo e só mudamos posição (no Windows, `setBounds` entre monitores com DPI diferente pode alterar o tamanho da janela).
 
 ## Limitações conhecidas
 
@@ -48,7 +50,7 @@ Não usamos `-webkit-app-region: drag`: no Windows a região de arrasto engole o
 - **Wayland**: o compositor não permite que apps posicionem janelas nem as mantenham sempre no topo; arrasto e `alwaysOnTop` falham. Recomendação: rodar sob XWayland (`--ozone-platform=x11`), documentado no README.
 - Em X11, alguns ambientes precisam de um pequeno atraso antes de criar a janela transparente.
 
-Esses pontos ficam encapsulados na `DesktopIntegration` (ex.: `enableClickThrough(win)` no Windows; no-op no Linux), como descrito em `architecture.md`.
+Esses pontos ficam encapsulados na `DesktopIntegration` (`setClickThrough(win, enabled)`: `setIgnoreMouseEvents` no Windows; nada no Linux), como descrito em `architecture.md`.
 
 ## Alternativas consideradas
 

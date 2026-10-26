@@ -45,7 +45,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
 - **Preload** (um por tipo de janela, princípio do menor privilégio): roda em sandbox; só importa `electron` (`contextBridge`, `ipcRenderer`) e o contrato. Expõe funções nomeadas e tipadas.
 - **Renderer**: React sem Node. Janelas:
   - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Na Etapa 3 ela é substituída pela janela da mascote; na Etapa 5 surge o painel.
-  - **Mascote (Etapa 3)**: transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Detalhes no ADR-0004.
+  - **Mascote (Etapa 3)**: 128×128 px lógicos, transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
   - **Painel (Etapa 5)**: janela pequena, sem barra de tarefas, para tarefas e lembretes.
 
 ## Contrato IPC
@@ -60,21 +60,21 @@ Regras:
 
 Canais (✅ Etapa 1; demais planejados, revisados em cada etapa):
 
-| Canal                    | Tipo          | Janela  | Entrada                                               | Saída                         |
-| ------------------------ | ------------- | ------- | ----------------------------------------------------- | ----------------------------- |
-| `app:get-info` ✅        | invoke        | todas   | —                                                     | `{ name, version, platform }` |
-| `mascot:set-interactive` | send          | mascote | `{ interactive: boolean }`                            | —                             |
-| `mascot:drag`            | send          | mascote | `{ phase: 'start'\|'move'\|'end', screenX, screenY }` | —                             |
-| `mascot:open-menu`       | send          | mascote | —                                                     | —                             |
-| `mascot:reaction`        | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                   | —                             |
-| `tasks:list`             | invoke        | painel  | —                                                     | `Task[]`                      |
-| `tasks:create`           | invoke        | painel  | `{ title }`                                           | `Task`                        |
-| `tasks:set-done`         | invoke        | painel  | `{ id, done }`                                        | `Task`                        |
-| `tasks:delete`           | invoke        | painel  | `{ id }`                                              | —                             |
-| `reminders:list`         | invoke        | painel  | —                                                     | `Reminder[]`                  |
-| `reminders:create`       | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                          | `Reminder`                    |
-| `reminders:delete`       | invoke        | painel  | `{ id }`                                              | —                             |
-| `data:changed`           | evento main→r | painel  | `{ tasks, reminders }`                                | —                             |
+| Canal                    | Tipo          | Janela  | Entrada                                                   | Saída                         |
+| ------------------------ | ------------- | ------- | --------------------------------------------------------- | ----------------------------- |
+| `app:get-info` ✅        | invoke        | todas   | —                                                         | `{ name, version, platform }` |
+| `mascot:set-interactive` | send          | mascote | `{ interactive: boolean }`                                | —                             |
+| `mascot:drag`            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main) | —                             |
+| `mascot:open-menu`       | send          | mascote | —                                                         | —                             |
+| `mascot:reaction`        | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                       | —                             |
+| `tasks:list`             | invoke        | painel  | —                                                         | `Task[]`                      |
+| `tasks:create`           | invoke        | painel  | `{ title }`                                               | `Task`                        |
+| `tasks:set-done`         | invoke        | painel  | `{ id, done }`                                            | `Task`                        |
+| `tasks:delete`           | invoke        | painel  | `{ id }`                                                  | —                             |
+| `reminders:list`         | invoke        | painel  | —                                                         | `Reminder[]`                  |
+| `reminders:create`       | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                              | `Reminder`                    |
+| `reminders:delete`       | invoke        | painel  | `{ id }`                                                  | —                             |
+| `data:changed`           | evento main→r | painel  | `{ tasks, reminders }`                                    | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
 

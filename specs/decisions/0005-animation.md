@@ -31,7 +31,7 @@
 
 ### Pixel art nítido (regras)
 
-1. Desenhar em tamanho pequeno (sugestão: quadros de **48×48 px**) e ampliar por **fator inteiro** (×3 ou ×4).
+1. Desenhar em tamanho pequeno e ampliar por **fator inteiro**. Decidido em 2026-10-26: quadros de **32×32 px** (o tamanho do desenho da dona do projeto, `resources/fai-sketch.png`) ampliados **×4** (128 px lógicos). A sugestão inicial era 48×48.
 2. `ctx.imageSmoothingEnabled = false` e `image-rendering: pixelated` no CSS.
 3. Considerar `devicePixelRatio`: com escala 125%/150% do Windows, o tamanho do canvas em pixels físicos deve ser múltiplo do sprite, senão um pixel vira 1,25 pixel e borra. O renderizador calcula o tamanho do _backing store_ a partir do DPR.
 

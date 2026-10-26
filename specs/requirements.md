@@ -11,8 +11,8 @@ Plataforma de aceite: Windows 10/11 x64. No Linux, os requisitos valem em desenv
 A aplicação inicia, exibe a janela principal e encerra sem deixar processos.
 
 - CA1 [manual] `npm run dev` abre a janela principal em até 10 s no Windows e no Linux.
-- CA2 [manual] Fechar a janela principal encerra a aplicação; nenhum processo `electron`/`Fai` permanece (Gerenciador de Tarefas / `ps`).
-- CA3 [auto] A UI da janela principal renderiza o nome e a versão da aplicação obtidos via IPC.
+- CA2 [manual] Fechar a janela principal encerra a aplicação; nenhum processo `electron`/`Fai` permanece (Gerenciador de Tarefas / `ps`). A partir da Etapa 3, a janela principal é a da mascote, que não tem botão de fechar: o app encerra pelo "Sair" da bandeja (RF-03 CA2), com a mesma exigência de não deixar processos (decisão de 2026-10-26).
+- CA3 [auto] A UI da janela principal renderiza o nome e a versão da aplicação obtidos via IPC. A partir da Etapa 3, eles formam o nome acessível da Fai.
 
 ### RF-02 — Instância única (Etapa 2)
 
