@@ -44,7 +44,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
 - **Main**: único com acesso a Node e ao SO. Dono do estado (fonte da verdade dos dados).
 - **Preload** (um por tipo de janela, princípio do menor privilégio): roda em sandbox; só importa `electron` (`contextBridge`, `ipcRenderer`) e o contrato. Expõe funções nomeadas e tipadas.
 - **Renderer**: React sem Node. Janelas:
-  - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Na Etapa 3 ela é substituída pela janela da mascote; na Etapa 5 surge o painel.
+  - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Substituída pela janela da mascote na Etapa 3; na Etapa 5 surge o painel.
   - **Mascote (Etapa 3)**: 160×160 px lógicos (ADR-0011), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
   - **Painel (Etapa 5)**: janela pequena, sem barra de tarefas, para tarefas e lembretes.
 
@@ -58,23 +58,23 @@ Regras:
 4. O handler no main: (a) verifica o remetente — o `webContents` pertence a uma janela conhecida e `senderFrame.url` tem a origem do app; (b) faz `schema.parse` do payload; (c) executa; (d) retorna objeto validado. Erros viram `{ ok: false, error: { code, message } }`, sem stack para o renderer.
 5. O preload nunca repassa o `event` do Electron ao renderer.
 
-Canais (✅ Etapa 1; demais planejados, revisados em cada etapa):
+Canais (✅ implementados; demais planejados, revisados em cada etapa):
 
-| Canal                    | Tipo          | Janela  | Entrada                                                   | Saída                         |
-| ------------------------ | ------------- | ------- | --------------------------------------------------------- | ----------------------------- |
-| `app:get-info` ✅        | invoke        | todas   | —                                                         | `{ name, version, platform }` |
-| `mascot:set-interactive` | send          | mascote | `{ interactive: boolean }`                                | —                             |
-| `mascot:drag`            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main) | —                             |
-| `mascot:open-menu`       | send          | mascote | —                                                         | —                             |
-| `mascot:reaction`        | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                       | —                             |
-| `tasks:list`             | invoke        | painel  | —                                                         | `Task[]`                      |
-| `tasks:create`           | invoke        | painel  | `{ title }`                                               | `Task`                        |
-| `tasks:set-done`         | invoke        | painel  | `{ id, done }`                                            | `Task`                        |
-| `tasks:delete`           | invoke        | painel  | `{ id }`                                                  | —                             |
-| `reminders:list`         | invoke        | painel  | —                                                         | `Reminder[]`                  |
-| `reminders:create`       | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                              | `Reminder`                    |
-| `reminders:delete`       | invoke        | painel  | `{ id }`                                                  | —                             |
-| `data:changed`           | evento main→r | painel  | `{ tasks, reminders }`                                    | —                             |
+| Canal                       | Tipo          | Janela  | Entrada                                                   | Saída                         |
+| --------------------------- | ------------- | ------- | --------------------------------------------------------- | ----------------------------- |
+| `app:get-info` ✅           | invoke        | todas   | —                                                         | `{ name, version, platform }` |
+| `mascot:set-interactive` ✅ | send          | mascote | `{ interactive: boolean }`                                | —                             |
+| `mascot:drag` ✅            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main) | —                             |
+| `mascot:open-menu`          | send          | mascote | —                                                         | —                             |
+| `mascot:reaction`           | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                       | —                             |
+| `tasks:list`                | invoke        | painel  | —                                                         | `Task[]`                      |
+| `tasks:create`              | invoke        | painel  | `{ title }`                                               | `Task`                        |
+| `tasks:set-done`            | invoke        | painel  | `{ id, done }`                                            | `Task`                        |
+| `tasks:delete`              | invoke        | painel  | `{ id }`                                                  | —                             |
+| `reminders:list`            | invoke        | painel  | —                                                         | `Reminder[]`                  |
+| `reminders:create`          | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                              | `Reminder`                    |
+| `reminders:delete`          | invoke        | painel  | `{ id }`                                                  | —                             |
+| `data:changed`              | evento main→r | painel  | `{ tasks, reminders }`                                    | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
 
@@ -111,7 +111,7 @@ Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
 
 Código de plataforma fica **só** ali; o resto do app conversa com a interface. A versão Linux completa vira uma nova implementação da interface.
 
-Métodos atuais (Etapa 2): `createTray({ icon, tooltip, menu, onActivate })`. No Windows, o clique esquerdo chama `onActivate` (mostrar/ocultar a Fai) e o direito abre o menu; no Linux só há o menu, porque o AppIndicator não emite `click`. Outras plataformas são recusadas com erro. Os ícones ficam em `resources/` e são carregados de `join(app.getAppPath(), 'resources', …)`.
+Métodos atuais: `createTray({ icon, tooltip, menu, onActivate })` (Etapa 2) e `setClickThrough(window, enabled)` (Etapa 3: `setIgnoreMouseEvents` com `forward` no Windows; nada no Linux). No Windows, o clique esquerdo chama `onActivate` (mostrar/ocultar a Fai) e o direito abre o menu; no Linux só há o menu, porque o AppIndicator não emite `click`. Outras plataformas são recusadas com erro. Os ícones ficam em `resources/` e são carregados de `join(app.getAppPath(), 'resources', …)`.
 
 ## Segurança (resumo; detalhes no ADR-0007)
 
@@ -128,3 +128,12 @@ Métodos atuais (Etapa 2): `createTray({ icon, tooltip, menu, onActivate })`. No
 - **Componentes**: Vitest + jsdom + React Testing Library; `window.fai` falso.
 - **Arquitetura**: teste que varre `src/domain` e falha com imports proibidos (reforça a regra de lint).
 - Fluxos de janela (transparência, click-through, notificações nativas): roteiros manuais em `specs/manual-tests.md` (criado na Etapa 3). E2E com Playwright fica fora do MVP.
+
+## Janela da mascote (Etapa 3)
+
+Implementada conforme o ADR-0004 e o ADR-0011:
+
+- **Janela** (`main/windows/mascot-window.ts`): 160×160 px lógicos, transparente, sem moldura, sempre no topo (`'floating'`), fora da barra de tarefas, sem foco; aparece com `showInactive()`. Preload `preload/mascot.ts` expõe `app.getInfo`, `mascot.setInteractive` e `mascot.drag`.
+- **Renderer** (`renderer/src/`): `MascotApp` carrega o quadro (importado como data URL, para o canvas não ficar contaminado e o alfa poder ser lido) e o nome acessível; `Mascot` desenha o quadro de 320×320 suavizado em 160×160. O controle de ponteiro (`mascot/pointer-controller.ts`, sem DOM) faz o _hit-test_ a cada movimento, avisa o main só quando o cursor entra ou sai do desenho e manda `start`/`move`/`end` do arrasto, no máximo um `move` por quadro.
+- **Main** (`main/mascot/mascot-controller.ts`): liga o click-through ao abrir e o alterna só quando muda; no arrasto lê o cursor com `screen.getCursorScreenPoint()` e chama `setPosition`; no fim grava a última posição que **ele mesmo aplicou** (no X11, `getPosition` atrasa em relação a `setPosition`); `display-removed` e `display-metrics-changed` trazem a Fai de volta para a tela.
+- **Domínio** (`domain/mascot/`): _hit-test_ por alfa (limiar 128), gesto de arrasto (limiar de 4 px, sem salto) e posição inicial (posição salva se ainda visível; senão, canto inferior direito do monitor principal, margem de 16 px).

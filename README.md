@@ -2,7 +2,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 2 (base do aplicativo residente) concluída: instância única, ícone e menu na bandeja e dados salvos localmente. A janela atual é provisória; a mascote chega na Etapa 3. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
+> **Status:** Etapa 3 (janela da mascote) em verificação: a Fai aparece transparente sobre as janelas, pode ser arrastada e lembra onde ficou. Falta conferir no Windows (cliques atravessando as áreas vazias e escalas de tela). Animação e reações chegam na Etapa 4. Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -70,9 +70,12 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 
 ## Usando a Fai (por enquanto)
 
-- **Janela:** mostra o nome, a versão e o sistema. Até a Etapa 3 ela faz o papel da mascote. Fechá-la encerra o app.
-- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a janela (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai" e "Sair".
-- **Instância única:** abrir o app de novo não cria outra Fai; a janela que já existe volta para a frente.
+- **A Fai:** aparece no canto inferior direito do monitor principal, por cima das outras janelas, sem moldura e sem botão na barra de tarefas. Ela não rouba o foco de quem está digitando.
+- **Arrastar:** segure a Fai com o botão esquerdo e arraste; ela pode ir para qualquer monitor. Ela reabre onde você a deixou. Se aquele monitor não estiver mais conectado, ela volta para o canto do monitor principal.
+- **Cliques em volta dela:** no Windows, os cliques no espaço vazio em volta do desenho (entre as asas, por exemplo) passam para o que estiver atrás. No Linux isso não é possível: o quadrado inteiro de 160×160 px bloqueia cliques (ADR-0004).
+- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai" e "Sair".
+- **Fechar:** a Fai não tem botão de fechar; use "Sair" no menu da bandeja. "Mostrar/ocultar Fai" só a esconde, e o app continua rodando.
+- **Instância única:** abrir o app de novo não cria outra Fai; se ela estiver oculta, reaparece.
 
 ## Seus dados
 
@@ -100,7 +103,7 @@ src/renderer/   interface React
 src/shared/     contrato IPC (canais e schemas zod)
 src/domain/     regras de negócio puras
 tests/          testes de arquitetura
-resources/      ícones do app e da bandeja (e as artes originais)
+resources/      ícones do app e da bandeja; art/ guarda as ilustrações originais da Fai
 specs/          especificação (fonte da verdade)
 ```
 
@@ -113,10 +116,9 @@ Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O re
 - **`Cannot read properties of undefined (reading 'isPackaged')` ao rodar `npm run dev`:** a variável de ambiente `ELECTRON_RUN_AS_NODE` está definida (acontece em processos iniciados pelo VS Code). Remova-a: `env -u ELECTRON_RUN_AS_NODE npm run dev` no Linux, ou `Remove-Item Env:ELECTRON_RUN_AS_NODE` no PowerShell.
 - **Linux: erro sobre `chrome-sandbox` / "SUID sandbox helper":** algumas distribuições restringem _user namespaces_. No Ubuntu 24.04 desta máquina funcionou sem ajustes. Se acontecer, siga a [documentação do Electron](https://www.electronjs.org/docs/latest/tutorial/sandbox#linux); **nunca** use `--no-sandbox`.
 - **Windows: a estrela não aparece na bandeja:** o Windows esconde ícones novos na setinha **^** perto do relógio. Para deixá-la sempre visível, arraste-a para a barra ou ative-a em Configurações → Personalização → Barra de tarefas → Outros ícones da bandeja do sistema.
-- **Linux: a estrela não aparece na bandeja:** o ícone exige suporte a AppIndicator/StatusNotifier. No Ubuntu, a extensão "Ubuntu AppIndicators" já vem ativa; em outros GNOME, instale a extensão "AppIndicator and KStatusNotifierItem Support". KDE tem suporte nativo. Sem a bandeja, o app funciona, mas só fecha pela janela.
+- **Linux: a estrela não aparece na bandeja:** o ícone exige suporte a AppIndicator/StatusNotifier. No Ubuntu, a extensão "Ubuntu AppIndicators" já vem ativa; em outros GNOME, instale a extensão "AppIndicator and KStatusNotifierItem Support". KDE tem suporte nativo. Sem a bandeja, a Fai funciona, mas não há como fechá-la pela interface: encerre com Ctrl+C no terminal onde rodou `npm run dev`/`npm run preview`.
 - **Linux/Wayland: o app fecha sozinho (`exited with signal SIGTRAP`) ao mostrar um aviso:** o Electron está no backend Wayland nativo, em que os diálogos derrubam o processo. Use `npm run dev`/`npm run preview`, que já forçam XWayland, ou rode `electron --ozone-platform=x11 .` (ADR-0010).
-- **Linux: `Electron failed to install correctly` ou `Electron uninstall`:** o binário do Electron não foi baixado no `npm ci`. Com o Node 22 ativo (`nvm use`), rode `node node_modules/electron/install.js`.
-- **`Error: Electron uninstall` ao rodar `npm run dev`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Rode `node node_modules/electron/install.js` para baixá-lo e tente de novo.
+- **`Error: Electron uninstall` ou `Electron failed to install correctly`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Com o Node 22 ativo (`nvm use`), rode `node node_modules/electron/install.js` e tente de novo.
 - **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
 
 ## Trabalhando em mais de uma máquina
