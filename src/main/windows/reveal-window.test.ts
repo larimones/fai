@@ -1,69 +1,48 @@
 import { describe, expect, it, vi } from 'vitest'
 import { revealWindow, toggleWindow, type ToggleableWindow } from './reveal-window'
 
-function fakeWindow(state: { minimized: boolean; visible: boolean }) {
+function fakeWindow(visible: boolean) {
   return {
-    isMinimized: vi.fn(() => state.minimized),
-    restore: vi.fn(),
-    isVisible: vi.fn(() => state.visible),
-    show: vi.fn(),
-    focus: vi.fn(),
+    isVisible: vi.fn(() => visible),
+    showInactive: vi.fn(),
     hide: vi.fn(),
   } satisfies ToggleableWindow
 }
 
 describe('revealWindow (RF-02)', () => {
-  it('only focuses a window that is already visible', () => {
-    const window = fakeWindow({ minimized: false, visible: true })
+  it('shows a hidden window without focusing it', () => {
+    const window = fakeWindow(false)
 
     revealWindow(window)
 
-    expect(window.restore).not.toHaveBeenCalled()
-    expect(window.show).not.toHaveBeenCalled()
-    expect(window.focus).toHaveBeenCalledOnce()
+    expect(window.showInactive).toHaveBeenCalledOnce()
   })
 
-  it('restores a minimized window before focusing it', () => {
-    const window = fakeWindow({ minimized: true, visible: true })
+  it('leaves a visible window alone', () => {
+    const window = fakeWindow(true)
 
     revealWindow(window)
 
-    expect(window.restore).toHaveBeenCalledOnce()
-    expect(window.focus).toHaveBeenCalledOnce()
-  })
-
-  it('shows a hidden window before focusing it', () => {
-    const window = fakeWindow({ minimized: false, visible: false })
-
-    revealWindow(window)
-
-    expect(window.show).toHaveBeenCalledOnce()
-    expect(window.show.mock.invocationCallOrder[0]).toBeLessThan(
-      window.focus.mock.invocationCallOrder[0] ?? 0,
-    )
+    expect(window.showInactive).not.toHaveBeenCalled()
   })
 })
 
 describe('toggleWindow (RF-03)', () => {
   it('hides a window the user can see', () => {
-    const window = fakeWindow({ minimized: false, visible: true })
+    const window = fakeWindow(true)
 
     toggleWindow(window)
 
     expect(window.hide).toHaveBeenCalledOnce()
-    expect(window.focus).not.toHaveBeenCalled()
+    expect(window.showInactive).not.toHaveBeenCalled()
   })
 
-  it('brings back a hidden or minimized window', () => {
-    const hidden = fakeWindow({ minimized: false, visible: false })
-    const minimized = fakeWindow({ minimized: true, visible: true })
+  it('brings back a hidden window without focusing it', () => {
+    const window = fakeWindow(false)
 
-    toggleWindow(hidden)
-    toggleWindow(minimized)
+    toggleWindow(window)
 
-    expect(hidden.show).toHaveBeenCalledOnce()
-    expect(minimized.restore).toHaveBeenCalledOnce()
-    expect(hidden.hide).not.toHaveBeenCalled()
-    expect(minimized.hide).not.toHaveBeenCalled()
+    expect(window.showInactive).toHaveBeenCalledOnce()
+    expect(window.hide).not.toHaveBeenCalled()
   })
 })

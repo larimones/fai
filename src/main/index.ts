@@ -7,10 +7,13 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  screen,
   session,
   type Tray,
 } from 'electron'
+import type { FaiData } from '@domain/data/fai-data'
 import { registerIpcHandlers } from './ipc/register-handlers'
+import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
 import { createDesktopIntegration } from './os/desktop-integration'
 import { createDataStore } from './persistence/data-store'
 import { describeLoadProblem, flushBeforeQuit, needsInitialSave } from './persistence/startup'
@@ -18,7 +21,7 @@ import { createAppUrlMatcher } from './security/app-url'
 import { hardenSession, hardenWebContents } from './security/harden'
 import { createSenderGuard } from './security/sender-guard'
 import { buildTrayMenu } from './tray/tray-menu'
-import { createMainWindow } from './windows/main-window'
+import { createMascotWindow } from './windows/mascot-window'
 import { revealWindow, toggleWindow } from './windows/reveal-window'
 
 // Must run before anything else: a second launch only wakes up the running instance (RF-02).
@@ -36,8 +39,7 @@ function startApp(): void {
       ? devServerUrl
       : pathToFileURL(join(__dirname, '..', 'renderer', 'index.html')).href
   const isAppUrl = createAppUrlMatcher(rendererEntryUrl)
-  // The main window stands in for the mascot window until Stage 3.
-  let mainWindow: BrowserWindow | undefined
+  let mascotWindow: BrowserWindow | undefined
   // Kept for the whole run: a garbage-collected Tray disappears from the system tray.
   let tray: Tray | undefined
 
@@ -48,8 +50,8 @@ function startApp(): void {
   })
 
   app.on('second-instance', () => {
-    if (mainWindow !== undefined && !mainWindow.isDestroyed()) {
-      revealWindow(mainWindow)
+    if (mascotWindow !== undefined && !mascotWindow.isDestroyed()) {
+      revealWindow(mascotWindow)
     }
   })
 
@@ -74,10 +76,37 @@ function startApp(): void {
     })
     flushBeforeQuit(app, dataStore)
     const loaded = await dataStore.load()
+    // The app's copy of the document; every change goes through here and then to the store.
+    let data: FaiData = loaded.data
     if (needsInitialSave(loaded)) {
-      dataStore.save(loaded.data)
+      dataStore.save(data)
       void dataStore.flush()
     }
+
+    const desktop = createDesktopIntegration(process.platform)
+    const window = createMascotWindow(rendererEntryUrl, {
+      position: initialMascotPosition(data.mascot.position, screen),
+      devTools: isDevelopment,
+    })
+    mascotWindow = window
+    const mascot = createMascotController({
+      window,
+      screen,
+      setClickThrough: (enabled) => {
+        desktop.setClickThrough(window, enabled)
+      },
+      savePosition: (position) => {
+        data = { ...data, mascot: { ...data.mascot, position } }
+        dataStore.save(data)
+      },
+    })
+    const keepMascotOnScreen = (): void => {
+      if (!window.isDestroyed()) {
+        mascot.keepOnScreen()
+      }
+    }
+    screen.on('display-removed', keepMascotOnScreen)
+    screen.on('display-metrics-changed', keepMascotOnScreen)
 
     registerIpcHandlers(
       ipcMain,
@@ -88,21 +117,17 @@ function startApp(): void {
           version: app.getVersion(),
           platform: process.platform,
         }),
+        mascot,
       },
     )
     const resourcesDir = join(app.getAppPath(), 'resources')
-    const window = createMainWindow(rendererEntryUrl, {
-      devTools: isDevelopment,
-      icon: join(resourcesDir, 'app-icon.png'),
-    })
-    mainWindow = window
     const toggleFai = (): void => {
       toggleWindow(window)
     }
     const quit = (): void => {
       app.quit()
     }
-    tray = createDesktopIntegration(process.platform).createTray({
+    tray = desktop.createTray({
       // nativeImage picks tray-icon@2x.png by itself on high-DPI screens.
       icon: nativeImage.createFromPath(join(resourcesDir, 'tray-icon.png')),
       tooltip: 'Fai',
