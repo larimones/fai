@@ -11,7 +11,7 @@ import {
 
 const PRIMARY = { id: 1, workArea: { x: 0, y: 0, width: 1920, height: 1040 } }
 const LEFT = { id: 2, workArea: { x: -1366, y: 0, width: 1366, height: 728 } }
-const PRIMARY_CORNER = { x: 1920 - 128 - SCREEN_MARGIN_PX, y: 1040 - 128 - SCREEN_MARGIN_PX }
+const PRIMARY_CORNER = { x: 1920 - 160 - SCREEN_MARGIN_PX, y: 1040 - 160 - SCREEN_MARGIN_PX }
 
 function fakeScreen(displays = [LEFT, PRIMARY]) {
   const state = { cursor: { x: 0, y: 0 }, displays }
@@ -81,6 +81,21 @@ describe('mascot drag (RF-06)', () => {
 
     controller.drag('end')
 
+    expect(savePosition).toHaveBeenCalledExactlyOnceWith({ x: 640, y: 340 })
+  })
+
+  it('saves where it put the window, even while the window still reports an older position', () => {
+    const { controller, state, window, savePosition } = setup()
+    // On X11 the window manager applies setPosition later; getPosition lags behind.
+    window.setPosition.mockImplementation(() => undefined)
+
+    state.cursor = { x: 560, y: 360 }
+    controller.drag('start')
+    state.cursor = { x: 700, y: 400 }
+    controller.drag('move')
+    controller.drag('end')
+
+    expect(window.getPosition()).toEqual([500, 300])
     expect(savePosition).toHaveBeenCalledExactlyOnceWith({ x: 640, y: 340 })
   })
 

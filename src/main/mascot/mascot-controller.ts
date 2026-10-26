@@ -50,6 +50,8 @@ export function createMascotController(options: MascotControllerOptions): Mascot
   const { window, screen, setClickThrough, savePosition } = options
   let interactive = false
   let drag: DragState | null = null
+  // On X11 the window manager applies setPosition later, so getPosition can lag behind a drag.
+  let draggedTo: ScreenPoint | null = null
 
   const windowPosition = (): ScreenPoint => {
     const [x = 0, y = 0] = window.getPosition()
@@ -71,6 +73,7 @@ export function createMascotController(options: MascotControllerOptions): Mascot
       switch (phase) {
         case 'start':
           drag = startDrag(screen.getCursorScreenPoint(), windowPosition())
+          draggedTo = null
           break
         case 'move': {
           if (drag === null) {
@@ -80,14 +83,16 @@ export function createMascotController(options: MascotControllerOptions): Mascot
           drag = step.state
           if (step.position !== null) {
             window.setPosition(step.position.x, step.position.y)
+            draggedTo = step.position
           }
           break
         }
         case 'end':
-          if (drag !== null && endDrag(drag) === 'drag') {
-            savePosition(windowPosition())
+          if (drag !== null && endDrag(drag) === 'drag' && draggedTo !== null) {
+            savePosition(draggedTo)
           }
           drag = null
+          draggedTo = null
           break
       }
     },
