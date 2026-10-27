@@ -14,6 +14,7 @@ import {
 import type { FaiData } from '@domain/data/fai-data'
 import { registerIpcHandlers } from './ipc/register-handlers'
 import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
+import { runWhenSettled } from './mascot/settle'
 import { createDesktopIntegration } from './os/desktop-integration'
 import { createDataStore } from './persistence/data-store'
 import { describeLoadProblem, flushBeforeQuit, needsInitialSave } from './persistence/startup'
@@ -23,6 +24,9 @@ import { createSenderGuard } from './security/sender-guard'
 import { buildTrayMenu } from './tray/tray-menu'
 import { createMascotWindow } from './windows/mascot-window'
 import { revealWindow, toggleWindow } from './windows/reveal-window'
+
+/** How long monitors must stay unchanged before the mascot is brought back on screen. */
+const DISPLAY_SETTLE_MS = 1000
 
 // Must run before anything else: a second launch only wakes up the running instance (RF-02).
 if (app.requestSingleInstanceLock()) {
@@ -100,11 +104,11 @@ function startApp(): void {
         dataStore.save(data)
       },
     })
-    const keepMascotOnScreen = (): void => {
+    const keepMascotOnScreen = runWhenSettled(() => {
       if (!window.isDestroyed()) {
         mascot.keepOnScreen()
       }
-    }
+    }, DISPLAY_SETTLE_MS)
     screen.on('display-removed', keepMascotOnScreen)
     screen.on('display-metrics-changed', keepMascotOnScreen)
 
