@@ -8,16 +8,30 @@ A Fai é uma mascote feérica de desktop, ilustrada (Electron + React + TypeScri
 
 ## Processo: Spec-Driven Development
 
-1. Spec primeiro (`specs/requirements.md`, `specs/architecture.md`, ADRs), depois plano (`specs/tasks.md`), depois código.
+1. Spec primeiro (`specs/requirements.md`, `specs/architecture.md`, ADRs), depois plano (`plan.md` e `tasks.md` da feature), depois código.
 2. Implemente **somente** a etapa atual do `specs/roadmap.md`. Marque cada tarefa no `tasks.md` ao concluí-la.
 3. Se o código divergir da spec, corrija um dos dois **e registre o motivo** (no ADR ou na própria spec).
 4. Toda decisão técnica relevante ganha um ADR curto em `specs/decisions/NNNN-titulo.md`.
 5. **Não antecipe escopo.** Itens do `specs/backlog.md` estão fora de escopo: nada de implementações nem de abstrações especulativas para eles.
 6. Nenhum teste, lint ou verificação de tipos é declarado aprovado sem ter sido executado de verdade.
 
+### Comandos do fluxo (ADR-0012)
+
+Cada feature tem uma pasta `specs/features/NN-slug/`, e o índice com o status de todas fica em `specs/features/README.md`. Os comandos estão em `.claude/commands/spec/`:
+
+| Comando           | Fase                                                                    | Escreve            |
+| ----------------- | ----------------------------------------------------------------------- | ------------------ |
+| `/spec:create`    | A dona do projeto descreve a feature (o quê e por quê).                 | `spec.md`          |
+| `/spec:plan`      | Perguntas e desenho técnico, ADRs. Sem código.                          | `plan.md`          |
+| `/spec:tasks`     | Tarefas `TN.MM` verificáveis, na ordem das dependências.                | `tasks.md`         |
+| `/spec:implement` | Uma tarefa por vez, teste primeiro, `npm run check` a cada tarefa.      | código, `tasks.md` |
+| `/spec:verify`    | O Claude testa de verdade: check, build, mutação, app rodando, cada CA. | `verification.md`  |
+
+Ao fim de **cada** comando, e principalmente ao fechar uma feature, termine com **Próximo passo**, **Pendências** e **Melhorias possíveis** (sem antecipar escopo do backlog).
+
 ## Onde estamos
 
-O projeto é desenvolvido em duas máquinas (Linux no trabalho, Windows em casa), sincronizadas pelo git. **No início de cada sessão**, leia `specs/roadmap.md` e `specs/tasks.md` (incluindo a seção "Notas") para saber a etapa atual e o que está pendente. Ao fim, deixe `tasks.md` atualizado para a outra máquina continuar. As ferramentas necessárias estão no `README.md`.
+O projeto é desenvolvido em duas máquinas (Linux no trabalho, Windows em casa), sincronizadas pelo git. **No início de cada sessão**, leia `specs/roadmap.md`, `specs/features/README.md` e o `tasks.md` da feature ativa (incluindo a seção "Notas") para saber a etapa atual e o que está pendente. Ao fim da sessão, deixe esse `tasks.md` atualizado e enviado (`git push`) para a outra máquina continuar. As ferramentas necessárias estão no `README.md`.
 
 ## Stack
 

@@ -2,7 +2,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 3 (janela da mascote) concluída: a Fai aparece transparente sobre as janelas, deixa os cliques passarem pelas áreas vazias (Windows), pode ser arrastada e lembra onde ficou. Próxima: Etapa 4 (animação e reações). Veja [specs/roadmap.md](specs/roadmap.md) e [specs/tasks.md](specs/tasks.md).
+> **Status:** Etapa 3 (janela da mascote) concluída: a Fai aparece transparente sobre as janelas, deixa os cliques passarem pelas áreas vazias (Windows), pode ser arrastada e lembra onde ficou. Próxima: Etapa 4 (animação e reações). Veja [specs/roadmap.md](specs/roadmap.md) e [specs/features/](specs/features/README.md).
 
 ## Ferramentas necessárias
 
@@ -127,7 +127,7 @@ Todo o contexto do projeto é versionado:
 
 - [CLAUDE.md](CLAUDE.md): regras permanentes (stack, segurança, convenções). O Claude Code o lê automaticamente.
 - [specs/](specs/): produto, requisitos, arquitetura, ADRs, roadmap e tarefas. É a fonte da verdade.
-- [specs/tasks.md](specs/tasks.md): o que já foi feito e o que vem a seguir.
+- [specs/features/](specs/features/README.md): uma pasta por feature (spec, plano, tarefas, verificação), criadas pelos comandos `/spec:create`, `/spec:plan`, `/spec:tasks`, `/spec:implement` e `/spec:verify` do Claude Code ([ADR-0012](specs/decisions/0012-feature-workflow.md)). O índice diz o que já foi feito e o que vem a seguir.
 
 Ao trocar de máquina: `git pull`, `nvm use 22` e `npm ci` (se o lockfile mudou). Ao terminar: `npm run check`, commit e `git push`.
 

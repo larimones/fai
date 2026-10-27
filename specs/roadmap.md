@@ -1,6 +1,6 @@
 # Roadmap do MVP
 
-Cada etapa termina com: `npm run check` passando (saída real registrada), critérios de aceitação conferidos, specs/README atualizados e `tasks.md` da etapa fechado. O `tasks.md` de cada etapa só é escrito quando a etapa anterior termina.
+Cada etapa termina com: `npm run check` passando (saída real registrada), critérios de aceitação conferidos, specs/README atualizados e `tasks.md` da etapa fechado. O `tasks.md` de cada etapa só é escrito quando a etapa anterior termina. Da Etapa 4 em diante, cada etapa é conduzida como feature em `specs/features/` pelos comandos `/spec:*` (ADR-0012).
 
 | Etapa | Nome                              | Entrega                                                                                                                                                                                                                     | Requisitos                          |
 | ----- | --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
