@@ -14,11 +14,12 @@ export function Mascot({ frame, label }: MascotProps) {
     () =>
       createPointerController({
         mascot: window.fai.mascot,
-        mask: frame.mask,
+        getMask: () => frame.mask,
         scale: FRAME_TO_WINDOW_SCALE,
         scheduleFrame: (callback) => {
           requestAnimationFrame(callback)
         },
+        onGesture: () => undefined,
       }),
     [frame],
   )
@@ -44,10 +45,16 @@ export function Mascot({ frame, label }: MascotProps) {
       role="img"
       aria-label={label}
       onPointerMove={(event) => {
-        pointer.move({ x: event.clientX, y: event.clientY })
+        pointer.move({ x: event.clientX, y: event.clientY }, { x: event.screenX, y: event.screenY })
       }}
       onPointerDown={(event) => {
-        if (event.button === 0 && pointer.press({ x: event.clientX, y: event.clientY })) {
+        if (
+          event.button === 0 &&
+          pointer.press(
+            { x: event.clientX, y: event.clientY },
+            { x: event.screenX, y: event.screenY },
+          )
+        ) {
           event.currentTarget.setPointerCapture(event.pointerId)
         }
       }}
