@@ -189,6 +189,31 @@ describe('MascotApp (RF-04..06, RF-08, RF-09, RF-01 CA3)', () => {
     expect([canvas.width, canvas.height]).toEqual([282, 240])
   })
 
+  it('pauses while hidden and starts idle over when shown again (RNF-08 CA2)', async () => {
+    let hidden = false
+    vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden)
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout')
+    installFakeApi(appInfo)
+    await renderLoaded()
+    await advance(3 * 160)
+    expect(lastDrawn()).toBe(3)
+
+    hidden = true
+    fireEvent(document, new Event('visibilitychange'))
+    const drawsWhileHidden = drawImage.mock.calls.length
+    setTimeoutSpy.mockClear()
+    await advance(5000)
+
+    expect(drawImage.mock.calls.length).toBe(drawsWhileHidden)
+    expect(setTimeoutSpy).not.toHaveBeenCalled()
+
+    hidden = false
+    fireEvent(document, new Event('visibilitychange'))
+    expect(lastDrawn()).toBe(0)
+    await advance(160)
+    expect(lastDrawn()).toBe(1)
+  })
+
   it('shows nothing when the drawing cannot be loaded', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     installFakeApi(appInfo)

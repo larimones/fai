@@ -48,6 +48,10 @@ export function Mascot({ sheet, label }: MascotProps) {
     // second in idle instead of 60 (RNF-08).
     const tick = (): void => {
       clearTimeout(timer)
+      // Hidden from the tray: no drawing and nothing scheduled until it shows again (RNF-08 CA2).
+      if (document.hidden) {
+        return
+      }
       const frame = currentFrame(animation, sheet.animations, Date.now())
       animation = frame.state
       if (frame.index !== frameIndex) {
@@ -79,10 +83,18 @@ export function Mascot({ sheet, label }: MascotProps) {
         tick()
       },
     })
+    const onVisibilityChange = (): void => {
+      if (!document.hidden) {
+        animation = startAnimation(Date.now())
+      }
+      tick()
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
     pointerRef.current = pointer
     tick()
     return () => {
       clearTimeout(timer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
       pointerRef.current = null
     }
   }, [sheet, ratio])
