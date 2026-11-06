@@ -1,7 +1,8 @@
 import type { AnimationSet } from '@domain/mascot/animation'
-import type { AlphaMask } from '@domain/mascot/hit-test'
+import { type AlphaMask, HIT_ALPHA_THRESHOLD } from '@domain/mascot/hit-test'
+import { decodeSheetMasks } from '@domain/mascot/mask-runs'
 import { toSpriteSheet } from '@domain/mascot/sprite-sheet'
-import { spriteSheetMetadataSchema } from '@shared/sprite-sheet-schema'
+import { spriteMasksSchema, spriteSheetMetadataSchema } from '@shared/sprite-sheet-schema'
 
 export interface LoadedFrame {
   readonly image: CanvasImageSource
@@ -14,41 +15,42 @@ export interface LoadedSheet {
   readonly animations: AnimationSet
 }
 
+export interface SheetSources {
+  readonly imageUrl: string
+  readonly metadata: unknown
+  readonly masks: unknown
+}
+
 /**
- * Validates the metadata, decodes the sheet and cuts it into frames with their masks.
- * The image URL must be a data URL: reading pixels of an image loaded from file://
- * would taint the canvas (ADR-0013).
+ * Validates the metadata and the click masks, decodes the sheet and cuts it into frames.
+ * The masks come ready from the art script, so no pixel is read back from a canvas and the
+ * sheet can be a regular file instead of a data URL in the bundle (ADR-0013).
  */
-export async function loadSpriteSheet(imageUrl: string, metadata: unknown): Promise<LoadedSheet> {
-  const result = toSpriteSheet(spriteSheetMetadataSchema.parse(metadata))
-  if (!result.ok) {
-    throw new Error(result.error)
+export async function loadSpriteSheet({
+  imageUrl,
+  metadata,
+  masks,
+}: SheetSources): Promise<LoadedSheet> {
+  const sheet = toSpriteSheet(spriteSheetMetadataSchema.parse(metadata))
+  if (!sheet.ok) {
+    throw new Error(sheet.error)
+  }
+  const decoded = decodeSheetMasks(
+    spriteMasksSchema.parse(masks),
+    sheet.sheet.frames,
+    HIT_ALPHA_THRESHOLD,
+  )
+  if (!decoded.ok) {
+    throw new Error(decoded.error)
   }
   const image = new Image()
   image.src = imageUrl
   await image.decode()
-  const canvas = document.createElement('canvas')
-  canvas.width = image.naturalWidth
-  canvas.height = image.naturalHeight
-  const context = canvas.getContext('2d', { willReadFrequently: true })
-  if (context === null) {
-    throw new Error('Canvas 2D indisponível.')
-  }
-  context.drawImage(image, 0, 0)
-  const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data
   const frames = await Promise.all(
-    result.sheet.frames.map(async ({ x, y, width, height }) => {
-      const alpha = new Uint8ClampedArray(width * height)
-      for (let row = 0; row < height; row += 1) {
-        for (let column = 0; column < width; column += 1) {
-          alpha[row * width + column] = pixels[((y + row) * canvas.width + x + column) * 4 + 3] ?? 0
-        }
-      }
-      return {
-        image: await createImageBitmap(image, x, y, width, height),
-        mask: { width, height, alpha },
-      }
-    }),
+    sheet.sheet.frames.map(async ({ x, y, width, height }, index) => ({
+      image: await createImageBitmap(image, x, y, width, height),
+      mask: decoded.masks[index] ?? { width, height, alpha: new Uint8ClampedArray(width * height) },
+    })),
   )
-  return { frames, animations: result.sheet.animations }
+  return { frames, animations: sheet.sheet.animations }
 }

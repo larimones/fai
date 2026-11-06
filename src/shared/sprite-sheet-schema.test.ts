@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { spriteSheetMetadataSchema } from './sprite-sheet-schema'
+import { spriteMasksSchema, spriteSheetMetadataSchema } from './sprite-sheet-schema'
 
 const valid = {
   frames: [
@@ -35,6 +35,29 @@ describe('spriteSheetMetadataSchema', () => {
 
     for (const input of cases) {
       expect(spriteSheetMetadataSchema.safeParse(input).success).toBe(false)
+    }
+  })
+})
+
+describe('spriteMasksSchema', () => {
+  const masks = { threshold: 128, width: 3, height: 2, frames: [[1, 3, 2]] }
+
+  it('accepts the masks file', () => {
+    expect(spriteMasksSchema.parse(masks)).toEqual(masks)
+  })
+
+  it('rejects impossible values', () => {
+    const cases = [
+      { ...masks, threshold: 256 },
+      { ...masks, width: 0 },
+      { ...masks, frames: [] },
+      { ...masks, frames: [[1, -3, 2]] },
+      { ...masks, frames: [[1.5, 3]] },
+      { threshold: 128, width: 3, frames: [[6]] },
+    ]
+
+    for (const input of cases) {
+      expect(spriteMasksSchema.safeParse(input).success).toBe(false)
     }
   })
 })

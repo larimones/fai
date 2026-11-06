@@ -10,7 +10,8 @@
 4. Acrescenta o contorno branco de adesivo.
 5. Reduz para 376×320 (o dobro da janela de 188×160), encostado na base.
 6. Monta a folha (4 colunas) e o JSON no formato "JSON (Array)" do Aseprite, com uma _tag_ por animação.
-7. Grava `docs/fai-idle.webp`, a animação de repouso que aparece no topo do README.
+7. Grava `fai-sheet.masks.json`: a máscara de clique de cada quadro (alfa acima de 128, o mesmo `HIT_ALPHA_THRESHOLD` de `src/domain/mascot/hit-test.ts`; se um mudar, mude o outro), em sequências de pixels transparentes e clicáveis. O arquivo fica fora do Prettier de propósito: uma linha por quadro.
+8. Grava `docs/fai-idle.webp`, a animação de repouso que aparece no topo do README.
 
 As animações, os quadros do GIF que cada uma usa e as durações ficam na lista `ANIMATIONS`, no topo do script. `react` e `dragged` são provisórias até a arte definitiva chegar.
 

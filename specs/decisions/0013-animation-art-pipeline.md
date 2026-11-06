@@ -15,7 +15,7 @@ A animação de repouso chegou como GIF (`resources/art/fai-idle-flap-source.gif
 2. **Janela de 188×160 px lógicos** (antes 160×160): a Fai mantém a altura de hoje e as asas abertas cabem (escolha da dona do projeto em 2026-11-06). Quadros com o dobro da resolução: **376×320**.
 3. **Formato: o "JSON (Array)" do Aseprite** (`frames[]` com `frame` e `duration`; `meta.frameTags[]` com `name`, `from`, `to`), como o ADR-0005 previa. Se um dia a dona do projeto usar o Aseprite, a exportação dele serve direto. Quadros reaproveitados com outra duração (a piscada do `react` é mais lenta que no `idle`) são repetidos na folha. Se a animação repete ou toca uma vez fica no código, por nome (`idle` e `dragged` repetem; `react` toca uma vez).
 4. **O JSON é validado com zod** ao carregar (schema em `src/shared/`), como todo dado que vem de fora do código.
-5. **A folha é importada como data URL** (`?inline`), como o quadro parado da Etapa 3: o _hit-test_ lê o alfa de cada quadro, e uma imagem vinda de `file://` contaminaria o canvas.
+5. **Máscaras de clique prontas e folha como arquivo comum** (ajuste de 2026-11-06, T4.11): o script grava também `fai-sheet.masks.json`, com a máscara de cada quadro em sequências de pixels transparentes e clicáveis (alfa acima de 128, o mesmo limiar do _hit-test_). O app lê as máscaras do JSON e importa a folha como arquivo (`img-src 'self'`), sem `getImageData`, então ela não precisa mais ser data URL. A versão anterior embutia a folha como data URL (`?inline`) para poder ler o alfa sem contaminar o canvas.
 
 ## Alternativas consideradas
 
@@ -26,5 +26,5 @@ A animação de repouso chegou como GIF (`resources/art/fai-idle-flap-source.gif
 ## Consequências
 
 - Quem converte a arte precisa de Python 3 e Pillow (`pip install Pillow`); o README explica. Rodar o app e os testes continua exigindo só Node.
-- A folha embutida aumenta o JavaScript do renderer (estimativa: 1–2 MB em base64). Para um app local isso não pesa; se pesar, as máscaras de alfa podem ir pré-calculadas no JSON e a imagem sair do bundle.
+- Com a folha embutida, o JavaScript do renderer tinha 3,27 MB; com a folha como arquivo e as máscaras prontas (47 KB), caiu para 0,83 MB e a memória privada em repouso de 140 para 128 MB (Linux, `tools/measure/`). O tempo até a janela aparecer não mudou (~700 ms). O limiar do _hit-test_ existe em dois lugares (`hit-test.ts` e o script); o app recusa máscaras feitas com outro limiar.
 - Trocar a arte provisória pela definitiva é rodar o script de novo com os arquivos novos; o código não muda.

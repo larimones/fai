@@ -22,6 +22,7 @@ SOURCE_GIF = ROOT / "resources" / "art" / "fai-idle-flap-source.gif"
 OUTPUT_DIR = ROOT / "src" / "renderer" / "src" / "assets"
 SHEET_PNG = OUTPUT_DIR / "fai-sheet.png"
 SHEET_JSON = OUTPUT_DIR / "fai-sheet.json"
+MASKS_JSON = OUTPUT_DIR / "fai-sheet.masks.json"
 # The animated Fai at the top of the README.
 README_IMAGE = ROOT / "docs" / "fai-idle.webp"
 
@@ -32,6 +33,8 @@ SHEET_COLUMNS = 4
 # Background: near-white pixels connected to the image border.
 BACKGROUND_MIN_CHANNEL = 230
 BACKGROUND_MAX_SPREAD = 14
+# Pixels more opaque than this receive clicks; must match HIT_ALPHA_THRESHOLD in src/domain/mascot/hit-test.ts.
+HIT_ALPHA_THRESHOLD = 128
 # White sticker outline, in source pixels.
 OUTLINE_RADIUS = 7
 
@@ -141,6 +144,28 @@ def build_sheet(source: list[Image.Image]) -> tuple[Image.Image, dict]:
     return sheet, metadata
 
 
+def mask_runs(frame: Image.Image) -> list[int]:
+    """Lengths of alternating see-through and clickable runs, row by row, starting see-through."""
+    runs, clickable, length = [], False, 0
+    for alpha in frame.getchannel("A").getdata():
+        if (alpha > HIT_ALPHA_THRESHOLD) == clickable:
+            length += 1
+        else:
+            runs.append(length)
+            clickable, length = not clickable, 1
+    runs.append(length)
+    return runs
+
+
+def build_masks(sheet: Image.Image, metadata: dict) -> dict:
+    """Click masks ready to use, so the app never reads pixels back from the sheet (ADR-0013)."""
+    frames = []
+    for entry in metadata["frames"]:
+        box = entry["frame"]
+        frames.append(mask_runs(sheet.crop((box["x"], box["y"], box["x"] + box["w"], box["y"] + box["h"]))))
+    return {"threshold": HIT_ALPHA_THRESHOLD, "width": FRAME_WIDTH, "height": FRAME_HEIGHT, "frames": frames}
+
+
 def write_previews(sheet: Image.Image, metadata: dict, directory: Path) -> None:
     """Each animation as an animated WebP, on a dark and a light background, at window size."""
     directory.mkdir(parents=True, exist_ok=True)
@@ -190,6 +215,18 @@ def main() -> None:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     sheet.save(SHEET_PNG, optimize=True)
     SHEET_JSON.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
+    # One line per frame keeps the file small and readable in diffs.
+    masks = build_masks(sheet, metadata)
+    MASKS_JSON.write_text(
+        '{\n  "threshold": %d,\n  "width": %d,\n  "height": %d,\n  "frames": [\n%s\n  ]\n}\n'
+        % (
+            masks["threshold"],
+            masks["width"],
+            masks["height"],
+            ",\n".join("    " + json.dumps(frame, separators=(", ", ": ")) for frame in masks["frames"]),
+        ),
+        encoding="utf-8",
+    )
     print(f"{SHEET_PNG.relative_to(ROOT)}: {sheet.width}x{sheet.height}, {len(metadata['frames'])} frames")
     write_readme_image(sheet, metadata)
     print(f"{README_IMAGE.relative_to(ROOT)}: idle animation")

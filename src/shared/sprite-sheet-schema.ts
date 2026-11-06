@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { SheetMasks } from '@domain/mascot/mask-runs'
 import type { SheetMetadata } from '@domain/mascot/sprite-sheet'
 
 const pixel = z.number().int().nonnegative()
@@ -22,3 +23,11 @@ export const spriteSheetMetadataSchema = z.object({
     frameTags: z.array(z.object({ name: z.string(), from: pixel, to: pixel })),
   }),
 }) satisfies z.ZodType<SheetMetadata>
+
+/** The click masks file made by tools/art/build-sprites.py (ADR-0013). */
+export const spriteMasksSchema = z.object({
+  threshold: z.number().int().min(0).max(255),
+  width: length,
+  height: length,
+  frames: z.array(z.array(z.number().int().nonnegative())).min(1),
+}) satisfies z.ZodType<SheetMasks>
