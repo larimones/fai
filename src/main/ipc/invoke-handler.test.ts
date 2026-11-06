@@ -2,7 +2,7 @@ import type { IpcMainInvokeEvent } from 'electron'
 import { describe, expect, it, vi } from 'vitest'
 import { IpcChannels } from '@shared/ipc/channels'
 import { invokeContract } from '@shared/ipc/schemas'
-import { createInvokeHandler } from './invoke-handler'
+import { createInvokeHandler, IpcRuleError } from './invoke-handler'
 
 const event = {} as IpcMainInvokeEvent
 const definition = invokeContract[IpcChannels.appGetInfo]
@@ -47,6 +47,41 @@ describe('createInvokeHandler (RNF-03)', () => {
       definition,
       () => true,
       () => ({ ...appInfo, secret: 'x' }),
+    )
+
+    await expect(handler(event, undefined)).resolves.toEqual({
+      ok: false,
+      error: { code: 'INTERNAL', message: 'Algo deu errado.' },
+    })
+  })
+})
+
+describe('createInvokeHandler: rule errors (CA16)', () => {
+  it('returns a rule error with its code and message, without a stack trace', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const handler = createInvokeHandler(
+      definition,
+      () => true,
+      () => {
+        throw new IpcRuleError('NOT_FOUND', 'Essa tarefa não existe mais.')
+      },
+    )
+
+    await expect(handler(event, undefined)).resolves.toEqual({
+      ok: false,
+      error: { code: 'NOT_FOUND', message: 'Essa tarefa não existe mais.' },
+    })
+    expect(error).not.toHaveBeenCalled()
+  })
+
+  it('still hides unexpected errors as INTERNAL', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const handler = createInvokeHandler(
+      definition,
+      () => true,
+      () => {
+        throw new Error('disk on fire at /home/user/secret')
+      },
     )
 
     await expect(handler(event, undefined)).resolves.toEqual({

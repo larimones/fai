@@ -7,6 +7,20 @@ export type IpcSenderEvent = Pick<IpcMainInvokeEvent, 'sender' | 'senderFrame'>
 
 export type SenderGuard = (event: IpcSenderEvent) => boolean
 
+/**
+ * A refusal the user should see (an invalid title, a task that no longer exists): it reaches
+ * the renderer with its code and message, unlike unexpected errors.
+ */
+export class IpcRuleError extends Error {
+  constructor(
+    readonly code: IpcErrorCode,
+    message: string,
+  ) {
+    super(message)
+    this.name = 'IpcRuleError'
+  }
+}
+
 function failure(code: IpcErrorCode, message: string): IpcResult<never> {
   return { ok: false, error: { code, message } }
 }
@@ -32,6 +46,9 @@ export function createInvokeHandler<Request, Response>(
       const value = definition.response.parse(await run(request.data))
       return { ok: true, value }
     } catch (error) {
+      if (error instanceof IpcRuleError) {
+        return failure(error.code, error.message)
+      }
       console.error('[ipc] handler failed', error)
       return failure('INTERNAL', 'Algo deu errado.')
     }
