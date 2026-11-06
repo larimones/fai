@@ -22,6 +22,8 @@ SOURCE_GIF = ROOT / "resources" / "art" / "fai-idle-flap-source.gif"
 OUTPUT_DIR = ROOT / "src" / "renderer" / "src" / "assets"
 SHEET_PNG = OUTPUT_DIR / "fai-sheet.png"
 SHEET_JSON = OUTPUT_DIR / "fai-sheet.json"
+# The animated Fai at the top of the README.
+README_IMAGE = ROOT / "docs" / "fai-idle.webp"
 
 # Twice the mascot window (188x160 logical pixels), for screens up to 200% (ADR-0013).
 FRAME_WIDTH, FRAME_HEIGHT = 376, 320
@@ -163,6 +165,22 @@ def write_previews(sheet: Image.Image, metadata: dict, directory: Path) -> None:
             )
 
 
+def write_readme_image(sheet: Image.Image, metadata: dict) -> None:
+    """The idle animation at window size on a transparent background, for the README."""
+    idle = next(tag for tag in metadata["meta"]["frameTags"] if tag["name"] == "idle")
+    window = (FRAME_WIDTH // 2, FRAME_HEIGHT // 2)
+    images, durations = [], []
+    for entry in metadata["frames"][idle["from"] : idle["to"] + 1]:
+        box = entry["frame"]
+        frame = sheet.crop((box["x"], box["y"], box["x"] + box["w"], box["y"] + box["h"]))
+        images.append(frame.convert("RGBa").resize(window, Image.LANCZOS).convert("RGBA"))
+        durations.append(entry["duration"])
+    README_IMAGE.parent.mkdir(parents=True, exist_ok=True)
+    images[0].save(
+        README_IMAGE, save_all=True, append_images=images[1:], duration=durations, loop=0, quality=90, method=6
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--preview-dir", type=Path, help="also write animated previews here (outside the repo)")
@@ -173,6 +191,8 @@ def main() -> None:
     sheet.save(SHEET_PNG, optimize=True)
     SHEET_JSON.write_text(json.dumps(metadata, indent=2) + "\n", encoding="utf-8")
     print(f"{SHEET_PNG.relative_to(ROOT)}: {sheet.width}x{sheet.height}, {len(metadata['frames'])} frames")
+    write_readme_image(sheet, metadata)
+    print(f"{README_IMAGE.relative_to(ROOT)}: idle animation")
     if arguments.preview_dir is not None:
         write_previews(sheet, metadata, arguments.preview_dir)
         print(f"previews: {arguments.preview_dir}")

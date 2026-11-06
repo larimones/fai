@@ -1,5 +1,9 @@
 # Fai ✨
 
+<p align="center">
+  <img src="docs/fai-idle.webp" alt="A Fai, uma fadinha de cabelo branco e asas lilás, batendo as asas e piscando sorridente" width="188" height="160">
+</p>
+
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
 > **Status:** Etapa 4 (animação e reações) em verificação: a Fai bate as asas em repouso, reage ao clique e mostra que está sendo carregada. Verificada no Linux em 2026-11-06; falta a verificação no Windows (CPU e memória, cliques atravessando com a Fai animada, escalas de 125% e 150%). Veja [specs/features/04-animacao-e-reacoes/verification.md](specs/features/04-animacao-e-reacoes/verification.md).
@@ -106,6 +110,7 @@ src/domain/     regras de negócio puras
 tests/          testes de arquitetura
 resources/      ícones do app e da bandeja; art/ guarda as ilustrações originais da Fai
 tools/art/      script que converte a arte na folha de quadros do app (Python + Pillow)
+docs/           imagens da documentação (a Fai do topo deste README, gerada pelo script de arte)
 specs/          especificação (fonte da verdade)
 ```
 

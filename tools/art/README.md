@@ -10,6 +10,7 @@
 4. Acrescenta o contorno branco de adesivo.
 5. Reduz para 376×320 (o dobro da janela de 188×160), encostado na base.
 6. Monta a folha (4 colunas) e o JSON no formato "JSON (Array)" do Aseprite, com uma _tag_ por animação.
+7. Grava `docs/fai-idle.webp`, a animação de repouso que aparece no topo do README.
 
 As animações, os quadros do GIF que cada uma usa e as durações ficam na lista `ANIMATIONS`, no topo do script. `react` e `dragged` são provisórias até a arte definitiva chegar.
 
