@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { frameAt, type SpriteAnimation } from './animation'
+import {
+  type AnimationSet,
+  currentFrame,
+  frameAt,
+  handleAnimationEvent,
+  type SpriteAnimation,
+  startAnimation,
+} from './animation'
 
 // Frames 10, 11, 12 lasting 100, 50 and 200 ms (350 ms in all).
 const frames = [
@@ -36,5 +43,87 @@ describe('frameAt (RF-08 CA2)', () => {
 
   it('treats a time before the start as the start', () => {
     expect(frameAt(once, -5)).toEqual({ index: 10, msUntilNext: 100, finished: false })
+  })
+})
+
+// idle: 2 frames of 100 ms, looping; react: 2 frames of 150 ms, once; dragged: 1 frame.
+const animations: AnimationSet = {
+  idle: {
+    frames: [
+      { index: 0, durationMs: 100 },
+      { index: 1, durationMs: 100 },
+    ],
+    loop: true,
+  },
+  react: {
+    frames: [
+      { index: 2, durationMs: 150 },
+      { index: 3, durationMs: 150 },
+    ],
+    loop: false,
+  },
+  dragged: { frames: [{ index: 4, durationMs: 1000 }], loop: true },
+}
+
+describe('mascot animation states (RF-09 CA3)', () => {
+  it('starts idle, looping', () => {
+    const state = startAnimation(1000)
+
+    expect(currentFrame(state, animations, 1000)).toMatchObject({
+      state: { mood: 'idle' },
+      index: 0,
+    })
+    expect(currentFrame(state, animations, 1250)).toMatchObject({ index: 0 })
+    expect(currentFrame(state, animations, 1350)).toMatchObject({ index: 1 })
+  })
+
+  it('goes idle → reacting → idle when the reaction ends', () => {
+    const reacting = handleAnimationEvent(startAnimation(0), 'click', 500)
+
+    expect(currentFrame(reacting, animations, 500)).toMatchObject({
+      state: { mood: 'reacting' },
+      index: 2,
+      msUntilNext: 150,
+    })
+    expect(currentFrame(reacting, animations, 799)).toMatchObject({ index: 3, msUntilNext: 1 })
+    // The reaction ended at 800; idle starts from there, not from when it is asked.
+    expect(currentFrame(reacting, animations, 950)).toEqual({
+      state: { mood: 'idle', since: 800 },
+      index: 1,
+      msUntilNext: 50,
+    })
+  })
+
+  it('does not restart or stack a reaction on a click during it', () => {
+    const reacting = handleAnimationEvent(startAnimation(0), 'click', 500)
+
+    expect(handleAnimationEvent(reacting, 'click', 700)).toBe(reacting)
+  })
+
+  it('goes idle → dragging → idle', () => {
+    const dragging = handleAnimationEvent(startAnimation(0), 'dragStart', 300)
+
+    expect(currentFrame(dragging, animations, 5000)).toMatchObject({
+      state: { mood: 'dragging' },
+      index: 4,
+    })
+    expect(handleAnimationEvent(dragging, 'dragEnd', 6000)).toEqual({ mood: 'idle', since: 6000 })
+  })
+
+  it('lets a drag interrupt a reaction', () => {
+    const reacting = handleAnimationEvent(startAnimation(0), 'click', 500)
+
+    expect(handleAnimationEvent(reacting, 'dragStart', 600)).toEqual({
+      mood: 'dragging',
+      since: 600,
+    })
+  })
+
+  it('ignores a drag end without a drag and a click while dragging', () => {
+    const idle = startAnimation(0)
+    const dragging = handleAnimationEvent(idle, 'dragStart', 100)
+
+    expect(handleAnimationEvent(idle, 'dragEnd', 200)).toBe(idle)
+    expect(handleAnimationEvent(dragging, 'click', 200)).toBe(dragging)
   })
 })
