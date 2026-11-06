@@ -2,16 +2,15 @@ import { mkdir, mkdtemp, readdir, readFile, rename, rm, writeFile } from 'node:f
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { z } from 'zod'
 import { createEmptyData, type FaiData } from '@domain/data/fai-data'
 import {
   createDataStore,
+  faiDataFormat,
   quarantineTimestamp,
   type DataStoreFs,
   type DataStoreOptions,
   type DocumentFormat,
 } from './data-store'
-import { faiDataV1Schema } from './schema'
 
 const NOW = new Date('2026-10-22T19:45:53.123Z')
 const QUARANTINE_NAME = 'fai-data.corrupt-20261022T194553Z.json'
@@ -20,13 +19,12 @@ function fsError(code: string): NodeJS.ErrnoException {
   return Object.assign(new Error(`${code}: simulated`), { code })
 }
 
-// A fake next format whose v2 has the same shape as v1, enough to prove that migration runs.
-const futureFormat: DocumentFormat = {
-  currentVersion: 2,
-  migrations: { 1: (document) => ({ ...document, schemaVersion: 2 }) },
-  schema: faiDataV1Schema
-    .extend({ schemaVersion: z.literal(2) })
-    .transform((document) => ({ ...document, schemaVersion: 1 as const })),
+const V1_WITH_POSITION = { schemaVersion: 1, mascot: { position: { x: -800, y: 420 } } }
+const TASK = {
+  id: '6f1c2a4e-8b1d-4c3e-9f2a-1b2c3d4e5f60',
+  title: 'Regar as plantas',
+  createdAt: '2026-11-06T12:00:00.000Z',
+  completedAt: null,
 }
 
 describe('quarantineTimestamp', () => {
@@ -84,8 +82,19 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
     expect(await readdir(dir)).toEqual([])
   })
 
-  it('round-trips a saved document exactly', async () => {
-    const data: FaiData = { schemaVersion: 1, mascot: { position: { x: -1280, y: 600 } } }
+  it('round-trips a saved document with tasks exactly', async () => {
+    const data: FaiData = {
+      schemaVersion: 2,
+      mascot: { position: { x: -1280, y: 600 } },
+      tasks: [
+        TASK,
+        {
+          ...TASK,
+          id: '7a2d3b5f-9c2e-4d4f-8a3b-2c3d4e5f6a71',
+          completedAt: '2026-11-06T13:00:00.000Z',
+        },
+      ],
+    }
     const writer = store()
     writer.save(data)
     await writer.flush()
@@ -93,12 +102,28 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
     expect(await store().load()).toEqual({ status: 'loaded', data })
   })
 
-  it('migrates documents from an older version', async () => {
-    await writeFile(filePath, JSON.stringify(createEmptyData()), 'utf8')
+  it('migrates a v1 file to v2, keeping the mascot position (ADR-0015)', async () => {
+    await writeFile(filePath, JSON.stringify(V1_WITH_POSITION), 'utf8')
 
-    const result = await store({ format: futureFormat }).load()
+    expect(await store().load()).toEqual({
+      status: 'migrated',
+      data: { schemaVersion: 2, mascot: { position: { x: -800, y: 420 } }, tasks: [] },
+    })
+  })
 
-    expect(result).toEqual({ status: 'migrated', data: createEmptyData() })
+  it('checks a v1 file against the v1 schema before migrating it', async () => {
+    // Migrating would overwrite this "tasks" with [], so only the v1 check can catch it.
+    await expectQuarantined(
+      JSON.stringify({ ...V1_WITH_POSITION, tasks: [{ title: 'lixo' }] }),
+      'INVALID_DOCUMENT',
+    )
+  })
+
+  it('quarantines a v2 file with a task the domain would never create', async () => {
+    await expectQuarantined(
+      JSON.stringify({ ...createEmptyData(), tasks: [{ ...TASK, title: '   ' }] }),
+      'INVALID_DOCUMENT',
+    )
   })
 
   it('quarantines a file that is not JSON', async () => {
@@ -121,8 +146,8 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
   })
 
   it('quarantines a document with no migration path', async () => {
-    const gapFormat: DocumentFormat = { ...futureFormat, migrations: {} }
-    await writeFile(filePath, JSON.stringify(createEmptyData()), 'utf8')
+    const gapFormat: DocumentFormat = { ...faiDataFormat, migrations: {} }
+    await writeFile(filePath, JSON.stringify(V1_WITH_POSITION), 'utf8')
 
     const result = await store({ format: gapFormat }).load()
 

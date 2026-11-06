@@ -3,7 +3,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   createEmptyData,
   FAI_DATA_MIGRATIONS,
-  type FaiDataV1,
+  type FaiDataV2,
 } from './fai-data'
 import { migrateToCurrent, type MigrationTable, type VersionedDocument } from './migrations'
 
@@ -22,14 +22,30 @@ function deepFreeze<T>(value: T): T {
 }
 
 describe('createEmptyData', () => {
-  it('creates a current-version document without a mascot position', () => {
-    const data: FaiDataV1 = createEmptyData()
+  it('creates a current-version document without a mascot position or tasks', () => {
+    const data: FaiDataV2 = createEmptyData()
 
-    expect(data).toEqual({ schemaVersion: CURRENT_SCHEMA_VERSION, mascot: { position: null } })
+    expect(data).toEqual({
+      schemaVersion: CURRENT_SCHEMA_VERSION,
+      mascot: { position: null },
+      tasks: [],
+    })
+    expect(CURRENT_SCHEMA_VERSION).toBe(2)
   })
 
   it('returns a fresh object on every call', () => {
     expect(createEmptyData()).not.toBe(createEmptyData())
+  })
+})
+
+describe('FAI_DATA_MIGRATIONS (ADR-0015)', () => {
+  it('takes a v1 document to v2 with an empty task list, keeping the mascot position', () => {
+    const v1 = deepFreeze({ schemaVersion: 1, mascot: { position: { x: -800, y: 420 } } })
+
+    expect(migrateToCurrent(v1, FAI_DATA_MIGRATIONS, CURRENT_SCHEMA_VERSION)).toEqual({
+      ok: true,
+      document: { schemaVersion: 2, mascot: { position: { x: -800, y: 420 } }, tasks: [] },
+    })
   })
 })
 

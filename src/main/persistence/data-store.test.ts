@@ -6,7 +6,7 @@ import { createEmptyData, type FaiData } from '@domain/data/fai-data'
 import { createDataStore, type DataStoreFs, type DataStoreOptions } from './data-store'
 
 function dataAt(x: number): FaiData {
-  return { schemaVersion: 1, mascot: { position: { x, y: 0 } } }
+  return { schemaVersion: 2, mascot: { position: { x, y: 0 } }, tasks: [] }
 }
 
 function fsError(code: string): NodeJS.ErrnoException {

@@ -11,8 +11,9 @@ import {
   migrateToCurrent,
   type MigrationErrorCode,
   type MigrationTable,
+  type VersionedDocument,
 } from '@domain/data/migrations'
-import { documentEnvelopeSchema, faiDataSchema } from './schema'
+import { documentEnvelopeSchema, faiDataSchema, sourceSchemas } from './schema'
 
 /** The file operations the store needs; tests swap them to simulate Windows file locks. */
 export interface DataStoreFs {
@@ -26,6 +27,8 @@ export interface DataStoreFs {
 export interface DocumentFormat {
   readonly currentVersion: number
   readonly migrations: MigrationTable
+  /** Schema of each stored version, checked before migrating; versions without one skip the check. */
+  readonly sourceSchemas: Readonly<Record<number, z.ZodType<VersionedDocument>>>
   readonly schema: z.ZodType<FaiData>
 }
 
@@ -77,9 +80,10 @@ const RETRYABLE_CODES = new Set(['EPERM', 'EBUSY', 'EACCES'])
 
 const nodeFs: DataStoreFs = { readFile, writeFile, rename, rm }
 
-const faiDataFormat: DocumentFormat = {
+export const faiDataFormat: DocumentFormat = {
   currentVersion: CURRENT_SCHEMA_VERSION,
   migrations: FAI_DATA_MIGRATIONS,
+  sourceSchemas,
   schema: faiDataSchema,
 }
 
@@ -116,6 +120,10 @@ function parseDocument(text: string, format: DocumentFormat): ParseOutcome {
   }
   const envelope = documentEnvelopeSchema.safeParse(json)
   if (!envelope.success) {
+    return { ok: false, reason: 'INVALID_DOCUMENT' }
+  }
+  const sourceSchema = format.sourceSchemas[envelope.data.schemaVersion]
+  if (sourceSchema !== undefined && !sourceSchema.safeParse(json).success) {
     return { ok: false, reason: 'INVALID_DOCUMENT' }
   }
   const migration = migrateToCurrent(envelope.data, format.migrations, format.currentVersion)
