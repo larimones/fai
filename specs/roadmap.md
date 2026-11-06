@@ -14,8 +14,8 @@ Cada etapa termina com: `npm run check` passando (saída real registrada), crit�
 
 ## Definição de pronto do MVP
 
-- [ ] A mascote é transparente, flutuante e arrastável.
-- [ ] As animações e as reações a cliques funcionam.
+- [x] A mascote é transparente, flutuante e arrastável. (Etapa 3, Windows e Linux)
+- [x] As animações e as reações a cliques funcionam. (Etapa 4; verificado no Linux, Windows aceito como pendência em 2026-11-06)
 - [ ] É possível criar, concluir e excluir tarefas.
 - [ ] Os lembretes são persistidos e geram notificações locais.
 - [ ] Os dados sobrevivem ao reinício do aplicativo.

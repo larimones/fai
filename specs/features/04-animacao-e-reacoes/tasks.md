@@ -67,7 +67,7 @@ T4.10 e T4.11 foram acrescentadas em 2026-11-06, a pedido da dona do projeto, de
 
 ### Pendências
 
-- **T4.09, Windows:** rodar `npm run check`, `npm run build` e o roteiro "Etapa 4 — animação e reações" de `specs/manual-tests.md` (passos 1 a 9), acrescentando uma seção do Windows em `verification.md`. Prioridade: CA6 (CPU < 3% e memória < 250 MB: `node tools/measure/measure-fai.mjs --seconds 60`, conferindo com o Gerenciador de Tarefas; a parte Windows do script ainda não foi executada), carregamento da folha de `file://` sem erro de CSP (T4.11), CA8 (cliques atravessando com a Fai animada) e CA1 em 125% e 150%.
+- **T4.09, Windows (aceita como pendência em 2026-11-06; a feature foi fechada sem ela):** rodar `npm run check`, `npm run build` e o roteiro "Etapa 4 — animação e reações" de `specs/manual-tests.md` (passos 1 a 9), acrescentando uma seção do Windows em `verification.md`. Prioridade: CA6 (CPU < 3% e memória < 250 MB: `node tools/measure/measure-fai.mjs --seconds 60`, conferindo com o Gerenciador de Tarefas; a parte Windows do script ainda não foi executada), carregamento da folha de `file://` sem erro de CSP (T4.11), CA8 (cliques atravessando com a Fai animada) e CA1 em 125% e 150%.
 - **Ambiente Linux:** `~/.local/node/bin` (Node 24) entra no `PATH` antes do nvm; `nvm use` não tem efeito. Tirar do perfil do shell ou pôr o nvm antes; até lá, conferir `node --version` antes do `npm run check`.
 
 - **Da feature 03 (não bloqueia):** testar a espera de 1 s ao trocar monitores (`runWhenSettled`), no Linux confirmando o "Manter as alterações?" e no Windows repetindo o RF-07 passo 3.

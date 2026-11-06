@@ -58,3 +58,7 @@ Executado no Linux pela dona do projeto, com o build desta verificação: repous
 2. **Mutação equivalente em `frameAt`:** código redundante removido (`refactor`), sem mudança de comportamento; testes continuam cobrindo a saída final.
 3. **Memória no Linux por PSS (256 MB) um pouco acima dos 250 MB** do CA6. O CA6 é medido no Windows pelo Gerenciador de Tarefas (memória privada), cujo equivalente aqui é ~143 MB. Fica como referência para a medição no Windows.
 4. **Roteiro de encerramento:** o padrão do `pkill` precisa incluir as flags com que o app foi aberto; anotado para os próximos roteiros (o app em si encerrou normalmente).
+
+## Fechamento
+
+2026-11-06: a dona do projeto aceitou fechar a feature com a verificação no Windows pendente ("toda essa parte da animação e da boneca está bem ok"). Ficam abertos, sem bloquear a Etapa 5: CA1 em 125% e 150%, CA3, CA4 e CA7 no Windows, CA6 (CPU e memória pelo Gerenciador de Tarefas ou por `tools/measure/`), CA8 (cliques atravessando com a Fai animada) e o carregamento da folha de `file://` com a CSP. A lista está em "Pendências" do `tasks.md`.

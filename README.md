@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 4 (animação e reações) em verificação: a Fai bate as asas em repouso, reage ao clique e mostra que está sendo carregada. Verificada no Linux em 2026-11-06; falta a verificação no Windows (CPU e memória, cliques atravessando com a Fai animada, escalas de 125% e 150%). Veja [specs/features/04-animacao-e-reacoes/verification.md](specs/features/04-animacao-e-reacoes/verification.md).
+> **Status:** Etapa 4 (animação e reações) concluída: a Fai bate as asas em repouso, reage ao clique e mostra que está sendo carregada (a verificação no Windows ficou como pendência). Próxima: Etapa 5 (painel de tarefas). Veja [specs/roadmap.md](specs/roadmap.md) e [specs/features/README.md](specs/features/README.md).
 
 ## Ferramentas necessárias
 

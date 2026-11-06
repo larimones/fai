@@ -1,7 +1,7 @@
 # Feature 04 — Animação e reações
 
 - **Etapa:** 4 (Animação e reações)
-- **Status:** em verificação
+- **Status:** concluída (2026-11-06, com a verificação no Windows aceita como pendência pela dona do projeto)
 - **Requisitos:** RF-08, RF-09, RNF-08
 
 ## Objetivo
