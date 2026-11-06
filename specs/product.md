@@ -21,7 +21,7 @@ Uma pessoa: eu, a desenvolvedora e usuária. Uso diário em Windows (alvo da pri
 
 - Estética feérica celestial, ilustrada em estilo adesivo (ADR-0011; a ideia inicial era pixel art retrô).
 - Paleta: azul-noturno, roxo, púrpura, dourado e estrelas.
-- Interface delicada, mas legível (contraste adequado) e discreta.
+- Interface delicada, mas legível (contraste adequado) e discreta. O painel de tarefas usa tons pastel, lilás e branco, com um toque "coquete" (✿, cantos bem arredondados), escolhido pela dona do projeto em 2026-11-06 (ADR-0014); a paleta escura abaixo continua de referência para o resto.
 - Somente assets locais.
 
 Paleta inicial (tokens CSS, ajustável quando o design existir):

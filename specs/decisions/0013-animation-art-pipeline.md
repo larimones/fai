@@ -17,6 +17,8 @@ A animação de repouso chegou como GIF (`resources/art/fai-idle-flap-source.gif
 4. **O JSON é validado com zod** ao carregar (schema em `src/shared/`), como todo dado que vem de fora do código.
 5. **Máscaras de clique prontas e folha como arquivo comum** (ajuste de 2026-11-06, T4.11): o script grava também `fai-sheet.masks.json`, com a máscara de cada quadro em sequências de pixels transparentes e clicáveis (alfa acima de 128, o mesmo limiar do _hit-test_). O app lê as máscaras do JSON e importa a folha como arquivo (`img-src 'self'`), sem `getImageData`, então ela não precisa mais ser data URL. A versão anterior embutia a folha como data URL (`?inline`) para poder ler o alfa sem contaminar o canvas.
 
+_Nota de 2026-11-06 (Etapa 5):_ várias entradas de `frames[]` podem apontar para o mesmo retângulo da folha (como a opção _merge duplicates_ do Aseprite exporta). O script grava cada desenho uma vez só e as animações (`react`, `dragged`, `celebrate`) reaproveitam os retângulos com as durações delas; o carregador reaproveita imagem e máscara por retângulo.
+
 ## Alternativas consideradas
 
 - **Script em Node** (`sharp`, `gifuct-js`, `pngjs`): mantém tudo em JavaScript, mas `sharp` é módulo nativo e as bibliotecas puras exigiriam reescrever remoção de fundo, contorno e redução de qualidade. Python + Pillow já fez o mesmo trabalho na Etapa 3 e só roda na máquina de quem converte a arte.

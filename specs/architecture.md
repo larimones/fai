@@ -60,21 +60,22 @@ Regras:
 
 Canais (✅ implementados; demais planejados, revisados em cada etapa):
 
-| Canal                       | Tipo          | Janela  | Entrada                                                   | Saída                         |
-| --------------------------- | ------------- | ------- | --------------------------------------------------------- | ----------------------------- |
-| `app:get-info` ✅           | invoke        | todas   | —                                                         | `{ name, version, platform }` |
-| `mascot:set-interactive` ✅ | send          | mascote | `{ interactive: boolean }`                                | —                             |
-| `mascot:drag` ✅            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main) | —                             |
-| `mascot:open-menu`          | send          | mascote | —                                                         | —                             |
-| `mascot:reaction`           | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                       | —                             |
-| `tasks:list`                | invoke        | painel  | —                                                         | `Task[]`                      |
-| `tasks:create`              | invoke        | painel  | `{ title }`                                               | `Task`                        |
-| `tasks:set-done`            | invoke        | painel  | `{ id, done }`                                            | `Task`                        |
-| `tasks:delete`              | invoke        | painel  | `{ id }`                                                  | —                             |
-| `reminders:list`            | invoke        | painel  | —                                                         | `Reminder[]`                  |
-| `reminders:create`          | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                              | `Reminder`                    |
-| `reminders:delete`          | invoke        | painel  | `{ id }`                                                  | —                             |
-| `data:changed`              | evento main→r | painel  | `{ tasks, reminders }`                                    | —                             |
+| Canal                       | Tipo          | Janela  | Entrada                                                                                                | Saída                         |
+| --------------------------- | ------------- | ------- | ------------------------------------------------------------------------------------------------------ | ----------------------------- |
+| `app:get-info` ✅           | invoke        | todas   | —                                                                                                      | `{ name, version, platform }` |
+| `mascot:set-interactive` ✅ | send          | mascote | `{ interactive: boolean }`                                                                             | —                             |
+| `mascot:drag` ✅            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main)                                              | —                             |
+| `mascot:open-menu`          | send          | mascote | —                                                                                                      | —                             |
+| `mascot:reaction`           | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                                                                    | —                             |
+| `tasks:list`                | invoke        | painel  | —                                                                                                      | `Task[]`                      |
+| `tasks:create`              | invoke        | painel  | `{ title }`                                                                                            | `Task`                        |
+| `tasks:set-done`            | invoke        | painel  | `{ id, done }`                                                                                         | `Task`                        |
+| `tasks:delete`              | invoke        | painel  | `{ id }`                                                                                               | —                             |
+| `reminders:list`            | invoke        | painel  | —                                                                                                      | `Reminder[]`                  |
+| `reminders:create`          | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                                                                           | `Reminder`                    |
+| `reminders:delete`          | invoke        | painel  | `{ id }`                                                                                               | —                             |
+| `panel:opened`              | evento main→r | painel  | — (o painel recarrega a lista, recolhe "Concluídas" e foca o campo)                                    | —                             |
+| `data:changed`              | evento main→r | painel  | `{ tasks, reminders }` (adiado: só o painel muda tarefas e recebe cada resultado; plano da feature 05) | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
 

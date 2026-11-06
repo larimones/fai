@@ -1,7 +1,7 @@
 # Feature 05 — Painel de tarefas
 
 - **Etapa:** 5 (Tarefas)
-- **Status:** especificada
+- **Status:** planejada
 - **Requisitos:** RF-10, RF-11, RF-12, RF-13, RF-17, RF-03 CA1 ("Abrir painel"), RNF-09, RNF-10
 
 ## Objetivo
@@ -12,7 +12,7 @@ Até aqui a Fai é só companhia. Esta feature a torna útil no dia a dia: com u
 
 - **Menu de contexto da Fai:** clique direito sobre o desenho abre um menu com um único item, "Abrir painel".
 - **Bandeja:** o menu ganha "Abrir painel" (completa o RF-03 CA1: "Mostrar/ocultar Fai", "Abrir painel", "Sair").
-- **Painel:** janela pequena que abre **perto da Fai**, inteira dentro da tela, e **fecha sozinha ao perder o foco**, com Esc ou ao pedir "Abrir painel" de novo. Usável só pelo teclado.
+- **Painel:** janela pequena que abre **perto da Fai**, inteira dentro da tela, **acompanha a Fai** quando ela é arrastada e **fecha sozinha ao perder o foco** ou com Esc. Usável só pelo teclado. Estilo em tons pastel, lilás e branco.
 - **Tarefas:** criar (título obrigatório, 1 a 200 caracteres depois de tirar espaços das pontas; a nova aparece no topo das pendentes), concluir, reabrir e excluir (com confirmação **na própria linha**: "Excluir esta tarefa? Sim / Não").
 - **Concluídas:** numa seção "Concluídas (N)" abaixo das pendentes, **recolhida por padrão**; aberta, permite reabrir e excluir.
 - **Comemoração:** ao concluir uma tarefa, a Fai faz uma animação curta de comemoração (`celebrate`) e volta ao repouso. Arte **provisória**, feita com quadros que já existem, até a arte definitiva da dona do projeto.
@@ -32,7 +32,7 @@ Até aqui a Fai é só companhia. Esta feature a torna útil no dia a dia: com u
 - CA1 [manual] RF-10 CA1: o painel abre pelo menu de contexto da Fai (clique direito) e pelo menu da bandeja.
 - CA2 [manual] RF-10 CA2: o painel é navegável por teclado (Tab, Enter; Esc fecha).
 - CA3 [manual] O painel abre ao lado da Fai, inteiro dentro da área de trabalho do monitor dela, inclusive com a Fai encostada numa borda ou num canto.
-- CA4 [manual] O painel fecha sozinho ao perder o foco (clique em outra janela ou na área de trabalho) e ao pedir "Abrir painel" com ele aberto.
+- CA4 [manual] O painel fecha sozinho ao perder o foco (clique em outra janela, na área de trabalho, ou ao abrir o menu da bandeja ou o da Fai) e com Esc; "Abrir painel" sempre abre. (Ajuste de 2026-11-06: fechar por "Abrir painel" não é observável, porque abrir o menu já tira o foco do painel; ver ADR-0014.)
 - CA5 [auto] RF-11 CA1: título obrigatório, com _trim_ e de 1 a 200 caracteres; fora disso a criação é recusada com mensagem.
 - CA6 [manual] RF-11 CA2: a tarefa criada aparece no topo da lista de pendentes.
 - CA7 [auto] RF-12 CA1: concluir registra `completedAt`; reabrir limpa `completedAt`.
@@ -54,12 +54,10 @@ Até aqui a Fai é só companhia. Esta feature a torna útil no dia a dia: com u
 - 2026-11-06: a confirmação de exclusão é **na própria linha** do painel.
 - 2026-11-06: o menu de contexto da Fai tem, por enquanto, **só "Abrir painel"**.
 - 2026-11-06: a arte de `celebrate` começa **provisória**.
+- 2026-11-06: estilo do painel **A — lilás e branco**, em tons pastel ("toque mais garota, coquete").
+- 2026-11-06: comemoração provisória **A — asas rápidas + piscada** (dois ciclos de asas a 80 ms, depois a piscada sorrindo).
+- 2026-11-06: arrastando a Fai com o painel aberto, **o painel acompanha**.
 
 ## Perguntas em aberto
 
-- Tamanho do painel e posição exata em relação à Fai (de que lado abre, como desvia das bordas e da barra de tarefas); o que acontece com o painel aberto se a Fai for arrastada (ao clicar nela, o painel perde o foco e fecha).
-- Menu de contexto nativo (`Menu.popup`) ou desenhado no renderer; como o clique direito chega da janela da mascote (que não recebe foco) ao main, e o comportamento no Linux, onde o retângulo inteiro recebe cliques.
-- Formato das tarefas no documento v2 (`id`, `title`, `createdAt`, `completedAt`), geração de IDs e relógio por parâmetro no domínio; migração v1 → v2.
-- Canais IPC do painel (`tasks:*`, `data:changed`) e o evento que faz a Fai comemorar (`mascot:reaction`, já listado em `architecture.md`).
-- Quais quadros do GIF formam a comemoração provisória.
-- Preload e CSP da janela nova; foco e teclado no painel (diferente da mascote, ele precisa receber foco).
+- Nenhuma. As técnicas foram respondidas no `plan.md`, no ADR-0014 e no ADR-0015.
