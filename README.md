@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 4 (animação e reações) concluída: a Fai bate as asas em repouso, reage ao clique e mostra que está sendo carregada (a verificação no Windows ficou como pendência). Próxima: Etapa 5 (painel de tarefas). Veja [specs/roadmap.md](specs/roadmap.md) e [specs/features/README.md](specs/features/README.md).
+> **Status:** Etapa 5 (painel de tarefas) com tarefas prontas: um painel pastel ao lado da Fai para criar, concluir, reabrir e excluir tarefas, com a Fai comemorando cada conclusão. As Etapas 3 e 4 (janela transparente, arrasto, animação e reações) estão concluídas. Veja [specs/features/05-painel-de-tarefas/tasks.md](specs/features/05-painel-de-tarefas/tasks.md).
 
 ## Ferramentas necessárias
 
