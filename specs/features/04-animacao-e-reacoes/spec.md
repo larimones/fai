@@ -1,7 +1,7 @@
 # Feature 04 — Animação e reações
 
 - **Etapa:** 4 (Animação e reações)
-- **Status:** especificada
+- **Status:** planejada
 - **Requisitos:** RF-08, RF-09, RNF-08
 
 ## Objetivo
@@ -37,7 +37,7 @@ Hoje a Fai é uma imagem parada. Ela deve parecer viva sem atrapalhar: em repous
 - CA5 [auto] RF-09 CA3: transições `idle → reacting → idle` e `idle → dragging → idle`; clique durante `reacting` não empilha reações.
 - CA6 [manual, Windows] RNF-08 CA1: com a Fai em `idle`, uso médio de CPU do app < 3% em 60 s e memória total < 250 MB.
 - CA7 [manual] RNF-08 CA2: a animação pausa quando a Fai está oculta.
-- CA8 [manual, Windows] RF-05 CA1 e CA2 continuam valendo com a Fai animada: em qualquer quadro, o clique no vazio atravessa e o clique no desenho é recebido, inclusive nos traços de movimento, que são finos e devem deixar o clique passar quando forem semitransparentes.
+- CA8 [manual, Windows] RF-05 CA1 e CA2 continuam valendo com a Fai animada: em qualquer quadro, o clique no vazio atravessa e o clique no desenho é recebido, acompanhando o quadro que está na tela. Os traços de movimento são opacos e fazem parte do desenho, então recebem clique (ajuste de 2026-11-06, ver `plan.md`).
 
 ## Decisões da dona do projeto
 
@@ -45,12 +45,9 @@ Hoje a Fai é uma imagem parada. Ela deve parecer viva sem atrapalhar: em repous
 - 2026-11-05: os traços de movimento e os brilhos do GIF ficam ao tirar o fundo.
 - 2026-11-05: `react` e `dragged` usam arte provisória feita com quadros do GIF; a arte definitiva substitui depois, sem mudar código.
 - 2026-11-05: `celebrate` passa para a Etapa 5 (roadmap ajustado).
+- 2026-11-06: janela de 188×160 (a Fai mantém a altura e as asas cabem), com contorno branco de adesivo acrescentado à animação.
+- 2026-11-06: `react` provisório = piscada sorrindo (quadros 4 a 6, uma vez, 240 ms cada); `dragged` provisório = quadro 1 (asas no alto), fixo.
 
 ## Perguntas em aberto
 
-- Quais quadros do GIF formam o `react` provisório (ex.: a piscada sorrindo, quadros 4 a 6) e qual quadro representa o `dragged`.
-- Formato dos quadros e do metadado: o ADR-0005 previa folha + JSON do Aseprite, e o ADR-0011 já antecipou que os quadros virão soltos. Definir como o GIF vira folha e metadado, e se a conversão fica num script versionado.
-- Enquadramento: os quadros do GIF têm 438×390 (não quadrados) e a janela tem 160×160; como encaixar sem cortar asas nem traços, e se a janela ou a escala mudam.
-- Estilo: o GIF não tem o contorno branco de adesivo da ilustração parada; se isso importa para a Fai continuar visível em fundos claros.
-- Ajuste do canvas pelo `devicePixelRatio` (roadmap) e como a máscara do _hit-test_ acompanha cada quadro sem custo alto.
-- Qualidade do GIF: paleta de 256 cores e transparência de 1 bit podem deixar bordas serrilhadas ou com halo branco; se o original existir em outro formato (vídeo, PNGs), vale pedir.
+- Nenhuma. As perguntas técnicas foram respondidas no `plan.md` e no ADR-0013.

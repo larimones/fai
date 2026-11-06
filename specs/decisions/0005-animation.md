@@ -39,7 +39,7 @@ A Fai passou a ser uma ilustração suave (ADR-0011). As regras abaixo ficam com
 
 ### Animações mínimas do MVP
 
-`idle` (loop, com piscada), `hover` (opcional), `react` (clique), `dragged` (sendo carregada), `celebrate` (tarefa concluída / lembrete). Até existir arte final, usamos um _placeholder_ local simples com os mesmos nomes de tags, para que trocar a arte não mude código.
+`idle` (loop, com piscada), `hover` (opcional), `react` (clique), `dragged` (sendo carregada), `celebrate` (tarefa concluída / lembrete; passou para a Etapa 5 em 2026-11-06, junto com o que a dispara). Formato e conversão da arte: ADR-0013. Até existir arte final, usamos um _placeholder_ local simples com os mesmos nomes de tags, para que trocar a arte não mude código.
 
 ## Consequências
 

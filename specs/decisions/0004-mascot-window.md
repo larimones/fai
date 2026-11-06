@@ -9,7 +9,7 @@ A Fai precisa parecer "solta" na tela: sem moldura, fundo transparente, acima da
 
 ## Decisão
 
-Uma `BrowserWindow` dedicada, pequena, de tamanho fixo: **160×160 px lógicos** (ajuste de 2026-10-26: a Fai é uma ilustração, ver ADR-0011), com:
+Uma `BrowserWindow` dedicada, pequena, de tamanho fixo: **188×160 px lógicos** (ajustes: 160×160 em 2026-10-26, ADR-0011; 188×160 em 2026-11-06, para as asas abertas da animação, ADR-0013), com:
 
 ```ts
 {

@@ -1,6 +1,6 @@
 # ADR-0011 — A Fai é uma ilustração suave, não pixel art
 
-- **Status:** aceito em 2026-10-26 (substitui as regras de "pixel art nítido" do ADR-0005 e o tamanho de janela do ADR-0004)
+- **Status:** aceito em 2026-10-26 (substitui as regras de "pixel art nítido" do ADR-0005 e o tamanho de janela do ADR-0004); tamanho da janela e resolução dos quadros ajustados pelo ADR-0013 em 2026-11-06 (188×160 e 376×320)
 - **Data:** 2026-10-26
 
 ## Contexto
