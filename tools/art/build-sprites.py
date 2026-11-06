@@ -46,6 +46,8 @@ ANIMATIONS: list[tuple[str, list[tuple[int, int]]]] = [
     ("react", [(3, 240), (4, 240), (5, 240)]),
     # Provisional: wings up, held still while being carried.
     ("dragged", [(0, 1000)]),
+    # Provisional: two fast wing cycles, then the smiling blink (owner's choice, 2026-11-06).
+    ("celebrate", [(index, 80) for index in range(8)] * 2 + [(3, 240), (4, 240), (5, 240)]),
 ]
 
 
@@ -106,25 +108,30 @@ def load_source_frames() -> list[Image.Image]:
 
 
 def build_sheet(source: list[Image.Image]) -> tuple[Image.Image, dict]:
-    entries = [(name, index, duration) for name, frames in ANIMATIONS for index, duration in frames]
-    rows = -(-len(entries) // SHEET_COLUMNS)
+    """Each source drawing is stored once; animation frames point at its rectangle with their own
+    duration, as Aseprite's "merge duplicates" export does (ADR-0013)."""
+    used = sorted({index for _, frames in ANIMATIONS for index, _ in frames})
+    rows = -(-len(used) // SHEET_COLUMNS)
     sheet = Image.new("RGBA", (SHEET_COLUMNS * FRAME_WIDTH, rows * FRAME_HEIGHT), (0, 0, 0, 0))
-    frames = []
-    for position, (name, index, duration) in enumerate(entries):
+    rectangles = {}
+    for position, index in enumerate(used):
         x = (position % SHEET_COLUMNS) * FRAME_WIDTH
         y = (position // SHEET_COLUMNS) * FRAME_HEIGHT
         sheet.alpha_composite(source[index], (x, y))
-        frames.append(
-            {
-                "filename": f"{name} {index}",
-                "frame": {"x": x, "y": y, "w": FRAME_WIDTH, "h": FRAME_HEIGHT},
-                "rotated": False,
-                "trimmed": False,
-                "spriteSourceSize": {"x": 0, "y": 0, "w": FRAME_WIDTH, "h": FRAME_HEIGHT},
-                "sourceSize": {"w": FRAME_WIDTH, "h": FRAME_HEIGHT},
-                "duration": duration,
-            }
-        )
+        rectangles[index] = {"x": x, "y": y, "w": FRAME_WIDTH, "h": FRAME_HEIGHT}
+    frames = [
+        {
+            "filename": f"{name} {index}",
+            "frame": rectangles[index],
+            "rotated": False,
+            "trimmed": False,
+            "spriteSourceSize": {"x": 0, "y": 0, "w": FRAME_WIDTH, "h": FRAME_HEIGHT},
+            "sourceSize": {"w": FRAME_WIDTH, "h": FRAME_HEIGHT},
+            "duration": duration,
+        }
+        for name, animation_frames in ANIMATIONS
+        for index, duration in animation_frames
+    ]
     tags, start = [], 0
     for name, animation_frames in ANIMATIONS:
         tags.append({"name": name, "from": start, "to": start + len(animation_frames) - 1, "direction": "forward"})

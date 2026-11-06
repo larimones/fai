@@ -63,6 +63,14 @@ const animations: AnimationSet = {
     loop: false,
   },
   dragged: { frames: [{ index: 4, durationMs: 1000 }], loop: true },
+  celebrate: {
+    frames: [
+      { index: 5, durationMs: 80 },
+      { index: 6, durationMs: 80 },
+      { index: 7, durationMs: 240 },
+    ],
+    loop: false,
+  },
 }
 
 describe('mascot animation states (RF-09 CA3)', () => {
@@ -125,5 +133,49 @@ describe('mascot animation states (RF-09 CA3)', () => {
 
     expect(handleAnimationEvent(idle, 'dragEnd', 200)).toBe(idle)
     expect(handleAnimationEvent(dragging, 'click', 200)).toBe(dragging)
+  })
+})
+
+describe('celebrating (RF-12 CA2)', () => {
+  it('celebrates once and then goes back to idle from the moment it ended', () => {
+    const celebrating = handleAnimationEvent(startAnimation(0), 'celebrate', 1000)
+
+    expect(currentFrame(celebrating, animations, 1000)).toMatchObject({
+      state: { mood: 'celebrating' },
+      index: 5,
+      msUntilNext: 80,
+    })
+    expect(currentFrame(celebrating, animations, 1170)).toMatchObject({ index: 7 })
+    // It ended at 1400; idle starts from there.
+    expect(currentFrame(celebrating, animations, 1450)).toEqual({
+      state: { mood: 'idle', since: 1400 },
+      index: 0,
+      msUntilNext: 50,
+    })
+  })
+
+  it('interrupts a reaction', () => {
+    const reacting = handleAnimationEvent(startAnimation(0), 'click', 100)
+
+    expect(handleAnimationEvent(reacting, 'celebrate', 200)).toEqual({
+      mood: 'celebrating',
+      since: 200,
+    })
+  })
+
+  it('skips the celebration while Fai is being carried', () => {
+    const dragging = handleAnimationEvent(startAnimation(0), 'dragStart', 100)
+
+    expect(handleAnimationEvent(dragging, 'celebrate', 200)).toBe(dragging)
+  })
+
+  it('ignores clicks during the celebration, and a drag interrupts it', () => {
+    const celebrating = handleAnimationEvent(startAnimation(0), 'celebrate', 100)
+
+    expect(handleAnimationEvent(celebrating, 'click', 150)).toBe(celebrating)
+    expect(handleAnimationEvent(celebrating, 'dragStart', 160)).toEqual({
+      mood: 'dragging',
+      since: 160,
+    })
   })
 })

@@ -39,13 +39,13 @@ export function frameAt(animation: SpriteAnimation, elapsedMs: number): FramePos
 }
 
 /** The animations the mascot needs, by name (ADR-0005, ADR-0013). */
-export type AnimationName = 'idle' | 'react' | 'dragged'
+export type AnimationName = 'idle' | 'react' | 'dragged' | 'celebrate'
 
 export type AnimationSet = Readonly<Record<AnimationName, SpriteAnimation>>
 
-export type MascotMood = 'idle' | 'reacting' | 'dragging'
+export type MascotMood = 'idle' | 'reacting' | 'dragging' | 'celebrating'
 
-export type AnimationEvent = 'click' | 'dragStart' | 'dragEnd'
+export type AnimationEvent = 'click' | 'dragStart' | 'dragEnd' | 'celebrate'
 
 export interface AnimationState {
   readonly mood: MascotMood
@@ -64,13 +64,17 @@ const ANIMATION_OF: Readonly<Record<MascotMood, AnimationName>> = {
   idle: 'idle',
   reacting: 'react',
   dragging: 'dragged',
+  celebrating: 'celebrate',
 }
 
 export function startAnimation(now: number): AnimationState {
   return { mood: 'idle', since: now }
 }
 
-/** Mood changes (RF-09 CA3). A click during a reaction or a drag changes nothing. */
+/**
+ * Mood changes (RF-09 CA3, RF-12 CA2). A click only reacts from idle; a drag interrupts
+ * anything; a celebration interrupts idle and a reaction, and is skipped during a drag.
+ */
 export function handleAnimationEvent(
   state: AnimationState,
   event: AnimationEvent,
@@ -83,10 +87,12 @@ export function handleAnimationEvent(
       return { mood: 'dragging', since: now }
     case 'dragEnd':
       return state.mood === 'dragging' ? { mood: 'idle', since: now } : state
+    case 'celebrate':
+      return state.mood === 'dragging' ? state : { mood: 'celebrating', since: now }
   }
 }
 
-/** The frame to show at `now`; a finished reaction hands over to idle from the moment it ended. */
+/** The frame to show at `now`; a finished reaction or celebration hands over to idle from the moment it ended. */
 export function currentFrame(
   state: AnimationState,
   animations: AnimationSet,
@@ -94,7 +100,7 @@ export function currentFrame(
 ): CurrentFrame {
   const animation = animations[ANIMATION_OF[state.mood]]
   const position = frameAt(animation, now - state.since)
-  if (state.mood === 'reacting' && position.finished) {
+  if ((state.mood === 'reacting' || state.mood === 'celebrating') && position.finished) {
     const totalMs = animation.frames.reduce((sum, frame) => sum + frame.durationMs, 0)
     return currentFrame(startAnimation(state.since + totalMs), animations, now)
   }

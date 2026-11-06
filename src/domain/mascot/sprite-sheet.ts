@@ -23,7 +23,7 @@ export interface SheetMetadata {
 }
 
 export interface SpriteSheet {
-  /** Where each frame sits in the sheet image, in image pixels. */
+  /** Where each frame sits in the sheet image, in image pixels. Frames may share a drawing. */
   readonly frames: readonly Rectangle[]
   readonly animations: AnimationSet
 }
@@ -33,7 +33,12 @@ export type SpriteSheetResult =
   | { readonly ok: false; readonly error: string }
 
 /** Whether each animation repeats is the app's choice, by name; the art only says which frames. */
-const LOOPS: Readonly<Record<AnimationName, boolean>> = { idle: true, react: false, dragged: true }
+const LOOPS: Readonly<Record<AnimationName, boolean>> = {
+  idle: true,
+  react: false,
+  dragged: true,
+  celebrate: false,
+}
 
 export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
   const { frames, meta } = metadata
@@ -59,8 +64,13 @@ export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
       loop: LOOPS[name],
     }
   }
-  const { idle, react, dragged } = animations
-  if (idle === undefined || react === undefined || dragged === undefined) {
+  const { idle, react, dragged, celebrate } = animations
+  if (
+    idle === undefined ||
+    react === undefined ||
+    dragged === undefined ||
+    celebrate === undefined
+  ) {
     return { ok: false, error: 'Animações incompletas.' }
   }
   return {
@@ -72,7 +82,7 @@ export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
         width: frame.w,
         height: frame.h,
       })),
-      animations: { idle, react, dragged },
+      animations: { idle, react, dragged, celebrate },
     },
   }
 }

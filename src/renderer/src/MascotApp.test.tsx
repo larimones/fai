@@ -14,6 +14,7 @@ const animations: AnimationSet = {
   },
   react: { frames: [8, 9, 10].map((index) => ({ index, durationMs: 240 })), loop: false },
   dragged: { frames: [{ index: 11, durationMs: 1000 }], loop: true },
+  celebrate: { frames: [0, 1, 2].map((index) => ({ index, durationMs: 80 })), loop: false },
 }
 // Fully opaque frames: every point of the window is on the drawing.
 const images = Array.from({ length: 12 }, () => new Image())

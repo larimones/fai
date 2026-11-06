@@ -179,8 +179,8 @@
     {
       "filename": "react 3",
       "frame": {
-        "x": 0,
-        "y": 640,
+        "x": 1128,
+        "y": 0,
         "w": 376,
         "h": 320
       },
@@ -201,8 +201,8 @@
     {
       "filename": "react 4",
       "frame": {
-        "x": 376,
-        "y": 640,
+        "x": 0,
+        "y": 320,
         "w": 376,
         "h": 320
       },
@@ -223,8 +223,8 @@
     {
       "filename": "react 5",
       "frame": {
-        "x": 752,
-        "y": 640,
+        "x": 376,
+        "y": 320,
         "w": 376,
         "h": 320
       },
@@ -245,8 +245,8 @@
     {
       "filename": "dragged 0",
       "frame": {
-        "x": 1128,
-        "y": 640,
+        "x": 0,
+        "y": 0,
         "w": 376,
         "h": 320
       },
@@ -263,6 +263,424 @@
         "h": 320
       },
       "duration": 1000
+    },
+    {
+      "filename": "celebrate 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 1",
+      "frame": {
+        "x": 376,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 2",
+      "frame": {
+        "x": 752,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 3",
+      "frame": {
+        "x": 1128,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 4",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 5",
+      "frame": {
+        "x": 376,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 6",
+      "frame": {
+        "x": 752,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 7",
+      "frame": {
+        "x": 1128,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 1",
+      "frame": {
+        "x": 376,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 2",
+      "frame": {
+        "x": 752,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 3",
+      "frame": {
+        "x": 1128,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 4",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 5",
+      "frame": {
+        "x": 376,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 6",
+      "frame": {
+        "x": 752,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 7",
+      "frame": {
+        "x": 1128,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 80
+    },
+    {
+      "filename": "celebrate 3",
+      "frame": {
+        "x": 1128,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
+    },
+    {
+      "filename": "celebrate 4",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
+    },
+    {
+      "filename": "celebrate 5",
+      "frame": {
+        "x": 376,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
     }
   ],
   "meta": {
@@ -272,7 +690,7 @@
     "format": "RGBA8888",
     "size": {
       "w": 1504,
-      "h": 960
+      "h": 640
     },
     "scale": "1",
     "frameTags": [
@@ -292,6 +710,12 @@
         "name": "dragged",
         "from": 11,
         "to": 11,
+        "direction": "forward"
+      },
+      {
+        "name": "celebrate",
+        "from": 12,
+        "to": 30,
         "direction": "forward"
       }
     ]
