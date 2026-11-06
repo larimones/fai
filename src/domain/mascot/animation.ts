@@ -26,9 +26,6 @@ export function frameAt(animation: SpriteAnimation, elapsedMs: number): FramePos
   }
   const totalMs = frames.reduce((sum, frame) => sum + frame.durationMs, 0)
   const elapsed = Math.max(0, elapsedMs)
-  if (!loop && elapsed >= totalMs) {
-    return { index: last.index, msUntilNext: null, finished: true }
-  }
   const time = loop ? elapsed % totalMs : elapsed
   let frameEnd = 0
   for (const frame of frames) {
@@ -37,6 +34,7 @@ export function frameAt(animation: SpriteAnimation, elapsedMs: number): FramePos
       return { index: frame.index, msUntilNext: frameEnd - time, finished: false }
     }
   }
+  // Only a play-once animation gets here: it ended and holds its last frame.
   return { index: last.index, msUntilNext: null, finished: true }
 }
 
