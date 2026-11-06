@@ -1,0 +1,299 @@
+{
+  "frames": [
+    {
+      "filename": "idle 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 1",
+      "frame": {
+        "x": 376,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 2",
+      "frame": {
+        "x": 752,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 3",
+      "frame": {
+        "x": 1128,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 4",
+      "frame": {
+        "x": 0,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 5",
+      "frame": {
+        "x": 376,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 6",
+      "frame": {
+        "x": 752,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "idle 7",
+      "frame": {
+        "x": 1128,
+        "y": 320,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 160
+    },
+    {
+      "filename": "react 3",
+      "frame": {
+        "x": 0,
+        "y": 640,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
+    },
+    {
+      "filename": "react 4",
+      "frame": {
+        "x": 376,
+        "y": 640,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
+    },
+    {
+      "filename": "react 5",
+      "frame": {
+        "x": 752,
+        "y": 640,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 240
+    },
+    {
+      "filename": "dragged 0",
+      "frame": {
+        "x": 1128,
+        "y": 640,
+        "w": 376,
+        "h": 320
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 376,
+        "h": 320
+      },
+      "sourceSize": {
+        "w": 376,
+        "h": 320
+      },
+      "duration": 1000
+    }
+  ],
+  "meta": {
+    "app": "tools/art/build-sprites.py",
+    "version": "1",
+    "image": "fai-sheet.png",
+    "format": "RGBA8888",
+    "size": {
+      "w": 1504,
+      "h": 960
+    },
+    "scale": "1",
+    "frameTags": [
+      {
+        "name": "idle",
+        "from": 0,
+        "to": 7,
+        "direction": "forward"
+      },
+      {
+        "name": "react",
+        "from": 8,
+        "to": 10,
+        "direction": "forward"
+      },
+      {
+        "name": "dragged",
+        "from": 11,
+        "to": 11,
+        "direction": "forward"
+      }
+    ]
+  }
+}
