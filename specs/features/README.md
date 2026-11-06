@@ -6,7 +6,7 @@ As Etapas 1 a 3 usaram o formato antigo: as Etapas 1 e 2 estão no histórico do
 
 Status: `especificada` → `planejada` → `em implementação` → `em verificação` → `concluída`.
 
-| Feature | Etapa | Status           | Pasta                                                                                 |
-| ------- | ----- | ---------------- | ------------------------------------------------------------------------------------- |
-| 03      | 3     | concluída        | [03-janela-da-mascote](03-janela-da-mascote/tasks.md) (formato antigo, só `tasks.md`) |
-| 04      | 4     | em implementação | [04-animacao-e-reacoes](04-animacao-e-reacoes/spec.md)                                |
+| Feature | Etapa | Status         | Pasta                                                                                 |
+| ------- | ----- | -------------- | ------------------------------------------------------------------------------------- |
+| 03      | 3     | concluída      | [03-janela-da-mascote](03-janela-da-mascote/tasks.md) (formato antigo, só `tasks.md`) |
+| 04      | 4     | em verificação | [04-animacao-e-reacoes](04-animacao-e-reacoes/spec.md)                                |

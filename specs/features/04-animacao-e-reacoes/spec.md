@@ -1,7 +1,7 @@
 # Feature 04 — Animação e reações
 
 - **Etapa:** 4 (Animação e reações)
-- **Status:** em implementação
+- **Status:** em verificação
 - **Requisitos:** RF-08, RF-09, RNF-08
 
 ## Objetivo

@@ -45,7 +45,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
 - **Preload** (um por tipo de janela, princípio do menor privilégio): roda em sandbox; só importa `electron` (`contextBridge`, `ipcRenderer`) e o contrato. Expõe funções nomeadas e tipadas.
 - **Renderer**: React sem Node. Janelas:
   - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Substituída pela janela da mascote na Etapa 3; na Etapa 5 surge o painel.
-  - **Mascote (Etapa 3)**: 160×160 px lógicos (ADR-0011), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
+  - **Mascote (Etapa 3)**: 188×160 px lógicos (ADR-0013), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
   - **Painel (Etapa 5)**: janela pequena, sem barra de tarefas, para tarefas e lembretes.
 
 ## Contrato IPC
@@ -133,7 +133,17 @@ Métodos atuais: `createTray({ icon, tooltip, menu, onActivate })` (Etapa 2) e `
 
 Implementada conforme o ADR-0004 e o ADR-0011:
 
-- **Janela** (`main/windows/mascot-window.ts`): 160×160 px lógicos, transparente, sem moldura, sempre no topo (`'floating'`), fora da barra de tarefas, sem foco; aparece com `showInactive()`. Preload `preload/mascot.ts` expõe `app.getInfo`, `mascot.setInteractive` e `mascot.drag`.
-- **Renderer** (`renderer/src/`): `MascotApp` carrega o quadro (importado como data URL, para o canvas não ficar contaminado e o alfa poder ser lido) e o nome acessível; `Mascot` desenha o quadro de 320×320 suavizado em 160×160. O controle de ponteiro (`mascot/pointer-controller.ts`, sem DOM) faz o _hit-test_ a cada movimento, avisa o main só quando o cursor entra ou sai do desenho e manda `start`/`move`/`end` do arrasto, no máximo um `move` por quadro.
+- **Janela** (`main/windows/mascot-window.ts`): 188×160 px lógicos desde a Etapa 4 (160×160 na Etapa 3), transparente, sem moldura, sempre no topo (`'floating'`), fora da barra de tarefas, sem foco; aparece com `showInactive()`. Preload `preload/mascot.ts` expõe `app.getInfo`, `mascot.setInteractive` e `mascot.drag`.
+- **Renderer** (`renderer/src/`): `MascotApp` carrega a arte e o nome acessível; `Mascot` desenha a Fai (animada desde a Etapa 4, ver abaixo). O controle de ponteiro (`mascot/pointer-controller.ts`, sem DOM) faz o _hit-test_ a cada movimento, avisa o main só quando o cursor entra ou sai do desenho e manda `start`/`move`/`end` do arrasto, no máximo um `move` por quadro.
 - **Main** (`main/mascot/mascot-controller.ts`): liga o click-through ao abrir e o alterna só quando muda; no arrasto lê o cursor com `screen.getCursorScreenPoint()` e chama `setPosition`; no fim grava a última posição que **ele mesmo aplicou** (no X11, `getPosition` atrasa em relação a `setPosition`); `display-removed` e `display-metrics-changed` trazem a Fai de volta para a tela, depois de 1 s sem novos eventos (o GNOME passa por arranjos intermediários ao trocar de monitores).
 - **Domínio** (`domain/mascot/`): _hit-test_ por alfa (limiar 128), gesto de arrasto (limiar de 4 px, sem salto) e posição inicial (posição salva se ainda visível; senão, canto inferior direito do monitor principal, margem de 16 px).
+
+## Animação (Etapa 4)
+
+Implementada conforme o ADR-0005, o ADR-0011 e o ADR-0013:
+
+- **Arte** (`tools/art/build-sprites.py`, Python + Pillow, rodado à mão): a arte da dona do projeto em `resources/art/` vira `renderer/src/assets/fai-sheet.png` (12 quadros de 376×320, contorno branco) e `fai-sheet.json` ("JSON (Array)" do Aseprite, uma _tag_ por animação). O app não depende do Python.
+- **Domínio** (`domain/mascot/animation.ts`, `sprite-sheet.ts`): `frameAt` escolhe o quadro pelo tempo decorrido e pelas durações; a máquina de estados (`idle`, `reacting`, `dragging`) é um valor imutável com o relógio por parâmetro. Clique só reage a partir do `idle`; arrasto interrompe tudo; o fim da reação devolve ao `idle` a partir do instante exato em que ela acabou. A conversão do metadado decide por nome se a animação repete (`idle`, `dragged`) ou toca uma vez (`react`).
+- **Contrato** (`shared/sprite-sheet-schema.ts`): schema zod do metadado; os campos do Aseprite que o app não usa são descartados.
+- **Renderer**: `load-sprite-sheet.ts` valida o JSON, decodifica a folha (embutida como data URL), recorta os quadros (`ImageBitmap`) e calcula uma máscara de alfa por quadro. `Mascot.tsx` guarda o estado da animação e o controle de ponteiro dentro de um único efeito; desenha só quando o quadro muda e dorme num `setTimeout` até a próxima troca (cerca de 6 desenhos por segundo no repouso). O canvas tem _backing store_ de 188×160 × `devicePixelRatio`, refeito quando a escala muda. O _hit-test_ usa a máscara do quadro na tela e é refeito quando o quadro troca sob o cursor parado. Os gestos (clique, início e fim de arrasto) saem do controle de ponteiro com o mesmo limiar de 4 px do main, sem canal IPC novo.
+- **Pausa**: com `document.hidden` (ocultar a janela afeta a Page Visibility API, `backgroundThrottling` ligado), o laço não desenha nem agenda nada; ao reaparecer, recomeça o `idle`.

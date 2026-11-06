@@ -2,7 +2,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 4 (animação e reações) com tarefas prontas: a Fai vai bater as asas em repouso, reagir ao clique e mostrar que está sendo carregada. A Etapa 3 (janela transparente, cliques atravessando o vazio no Windows, arrasto e posição lembrada) está concluída. Veja [specs/features/04-animacao-e-reacoes/tasks.md](specs/features/04-animacao-e-reacoes/tasks.md).
+> **Status:** Etapa 4 (animação e reações) implementada, em verificação: a Fai bate as asas em repouso, reage ao clique e mostra que está sendo carregada. Falta a verificação final nas duas máquinas, com a medição de CPU e memória no Windows. Veja [specs/features/04-animacao-e-reacoes/tasks.md](specs/features/04-animacao-e-reacoes/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -14,9 +14,9 @@ Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage
 | **npm**                                  | 10+ (vem com o Node 22)              | —                                                                                    | —                                    | Gerenciador de pacotes (ADR-0002)              |
 | VS Code (recomendado)                    | atual                                | —                                                                                    | —                                    | Editor; extensões: ESLint, Prettier            |
 
-**Não é necessário** instalar Python, Visual Studio Build Tools nem compiladores C++: o projeto não usa módulos nativos (ADR-0003). O Electron, o electron-vite, o Vite e as demais ferramentas são instalados pelo `npm install`, com versões fixadas no `package-lock.json`.
+**Não é necessário** instalar Visual Studio Build Tools nem compiladores C++: o projeto não usa módulos nativos (ADR-0003). Python 3 com Pillow só é preciso para converter arte nova da Fai (`tools/art/`, ADR-0013); rodar o app e os testes não depende dele. O Electron, o electron-vite, o Vite e as demais ferramentas são instalados pelo `npm install`, com versões fixadas no `package-lock.json`.
 
-Ferramentas opcionais para a arte (a partir da Etapa 4, ADR-0005): LibreSprite ou Piskel (gratuitos), ou Aseprite.
+Arte da Fai: a dona do projeto entrega ilustrações ou GIFs com fundo branco liso, e `tools/art/build-sprites.py` gera a folha de quadros (veja [tools/art/README.md](tools/art/README.md)). Quem preferir pode exportar do Aseprite no formato "JSON (Array)", que o app lê direto.
 
 ### Preparar o Windows (uma vez)
 
@@ -72,7 +72,8 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 
 - **A Fai:** aparece no canto inferior direito do monitor principal, por cima das outras janelas, sem moldura e sem botão na barra de tarefas. Ela não rouba o foco de quem está digitando.
 - **Arrastar:** segure a Fai com o botão esquerdo e arraste; ela pode ir para qualquer monitor. Ela reabre onde você a deixou. Se aquele monitor não estiver mais conectado, ela volta para o canto do monitor principal.
-- **Cliques em volta dela:** no Windows, os cliques no espaço vazio em volta do desenho (entre as asas, por exemplo) passam para o que estiver atrás. No Linux isso não é possível: o quadrado inteiro de 160×160 px bloqueia cliques (ADR-0004).
+- **Cliques em volta dela:** no Windows, os cliques no espaço vazio em volta do desenho (entre as asas, por exemplo) passam para o que estiver atrás. No Linux isso não é possível: o retângulo inteiro de 188×160 px bloqueia cliques (ADR-0004).
+- **Animação:** em repouso, a Fai bate as asas e pisca sorrindo. Um clique rápido nela faz uma piscada sorridente, e ela volta ao repouso; enquanto é arrastada, fica com as asas paradas no alto. Quando está oculta, a animação para e não gasta processamento. A reação ao clique e a pose de "sendo carregada" ainda usam arte provisória.
 - **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai" e "Sair".
 - **Fechar:** a Fai não tem botão de fechar; use "Sair" no menu da bandeja. "Mostrar/ocultar Fai" só a esconde, e o app continua rodando.
 - **Instância única:** abrir o app de novo não cria outra Fai; se ela estiver oculta, reaparece.
@@ -104,6 +105,7 @@ src/shared/     contrato IPC (canais e schemas zod)
 src/domain/     regras de negócio puras
 tests/          testes de arquitetura
 resources/      ícones do app e da bandeja; art/ guarda as ilustrações originais da Fai
+tools/art/      script que converte a arte na folha de quadros do app (Python + Pillow)
 specs/          especificação (fonte da verdade)
 ```
 
