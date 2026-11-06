@@ -1,18 +1,32 @@
-import { fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
-import { FRAME_SIZE_PX } from '@domain/mascot/dimensions'
+import type { AnimationSet } from '@domain/mascot/animation'
+import { FRAME_SIZE } from '@domain/mascot/dimensions'
 import type { FaiApi } from '@shared/ipc/api'
-import type { LoadedFrame } from './mascot/load-frame'
+import type { LoadedSheet } from './mascot/load-sprite-sheet'
 import { MascotApp } from './MascotApp'
 
-// A fully opaque frame: every point of the window is on the drawing.
-const frame: LoadedFrame = {
-  image: new Image(),
-  mask: {
-    width: FRAME_SIZE_PX,
-    height: FRAME_SIZE_PX,
-    alpha: new Uint8ClampedArray(FRAME_SIZE_PX * FRAME_SIZE_PX).fill(255),
+// Shaped like fai-sheet.json: idle 0–7 (160 ms), react 8–10 (240 ms), dragged 11.
+const animations: AnimationSet = {
+  idle: {
+    frames: [0, 1, 2, 3, 4, 5, 6, 7].map((index) => ({ index, durationMs: 160 })),
+    loop: true,
   },
+  react: { frames: [8, 9, 10].map((index) => ({ index, durationMs: 240 })), loop: false },
+  dragged: { frames: [{ index: 11, durationMs: 1000 }], loop: true },
+}
+// Fully opaque frames: every point of the window is on the drawing.
+const images = Array.from({ length: 12 }, () => new Image())
+const sheet: LoadedSheet = {
+  frames: images.map((image) => ({
+    image,
+    mask: {
+      width: FRAME_SIZE.width,
+      height: FRAME_SIZE.height,
+      alpha: new Uint8ClampedArray(FRAME_SIZE.width * FRAME_SIZE.height).fill(255),
+    },
+  })),
+  animations,
 }
 
 function installFakeApi(getInfo: FaiApi['app']['getInfo']) {
@@ -27,69 +41,160 @@ const appInfo = () =>
     value: { name: 'Fai', version: '0.1.0', platform: 'linux' },
   })
 
-describe('MascotApp (RF-04..06, RF-01 CA3)', () => {
+describe('MascotApp (RF-04..06, RF-08, RF-09, RF-01 CA3)', () => {
   let setPointerCapture: Mock<(pointerId: number) => void>
+  let drawImage: Mock<(image: CanvasImageSource, ...rest: number[]) => void>
 
   beforeEach(() => {
-    // jsdom has no canvas drawing; the hit-test reads the injected mask instead.
-    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null)
+    vi.useFakeTimers()
+    drawImage = vi.fn()
+    const context = { drawImage, clearRect: vi.fn() } as unknown as CanvasRenderingContext2D
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(context)
     setPointerCapture = vi.fn()
     HTMLCanvasElement.prototype.setPointerCapture = setPointerCapture
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })
 
+  async function renderLoaded(load: () => Promise<LoadedSheet> = () => Promise.resolve(sheet)) {
+    render(<MascotApp loadSheet={load} />)
+    // Lets the sheet and the app info promises settle.
+    await act(async () => {
+      await Promise.resolve()
+    })
+  }
+
+  const lastDrawn = (): number => images.indexOf(drawImage.mock.lastCall?.[0] as HTMLImageElement)
+
+  async function advance(ms: number): Promise<void> {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ms)
+    })
+  }
+
   it('names the mascot with the app info received through the bridge', async () => {
     installFakeApi(appInfo)
-    render(<MascotApp loadFrame={() => Promise.resolve(frame)} />)
+    await renderLoaded()
 
-    expect(await screen.findByRole('img', { name: 'Fai v0.1.0 · Linux' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Fai v0.1.0 · Linux' })).toBeInTheDocument()
   })
 
   it('keeps a plain name when the bridge fails', async () => {
     installFakeApi(() =>
       Promise.resolve({ ok: false, error: { code: 'INTERNAL', message: 'Algo deu errado.' } }),
     )
-    render(<MascotApp loadFrame={() => Promise.resolve(frame)} />)
+    await renderLoaded()
 
-    expect(await screen.findByRole('img', { name: 'Fai' })).toBeInTheDocument()
+    expect(screen.getByRole('img', { name: 'Fai' })).toBeInTheDocument()
   })
 
-  it('wires pointer events to click-through and drag messages', async () => {
-    const mascot = installFakeApi(appInfo)
-    render(<MascotApp loadFrame={() => Promise.resolve(frame)} />)
-    const canvas = await screen.findByRole('img')
+  it('plays idle with the frame durations from the sheet (RF-08)', async () => {
+    installFakeApi(appInfo)
+    await renderLoaded()
 
-    fireEvent.pointerMove(canvas, { clientX: 80, clientY: 80 })
-    fireEvent.pointerDown(canvas, { clientX: 80, clientY: 80, button: 0, pointerId: 1 })
-    fireEvent.pointerUp(canvas, { clientX: 80, clientY: 80, pointerId: 1 })
+    expect(lastDrawn()).toBe(0)
+    await advance(159)
+    expect(lastDrawn()).toBe(0)
+    await advance(1)
+    expect(lastDrawn()).toBe(1)
+    await advance(7 * 160)
+    expect(lastDrawn()).toBe(0)
+  })
+
+  it('reacts to a click and then goes back to idle (RF-09)', async () => {
+    const mascot = installFakeApi(appInfo)
+    await renderLoaded()
+    const canvas = screen.getByRole('img')
+
+    fireEvent.pointerDown(canvas, {
+      clientX: 80,
+      clientY: 80,
+      screenX: 500,
+      screenY: 300,
+      button: 0,
+      pointerId: 1,
+    })
+    fireEvent.pointerUp(canvas, { pointerId: 1 })
+
+    expect(lastDrawn()).toBe(8)
+    await advance(240)
+    expect(lastDrawn()).toBe(9)
+    await advance(2 * 240)
+    expect(lastDrawn()).toBe(0)
+    expect(mascot.drag.mock.calls).toEqual([['start'], ['end']])
+    expect(setPointerCapture).toHaveBeenCalledWith(1)
+  })
+
+  it('shows it is being carried during a drag, then goes back to idle (RF-09)', async () => {
+    installFakeApi(appInfo)
+    await renderLoaded()
+    const canvas = screen.getByRole('img')
+
+    fireEvent.pointerDown(canvas, {
+      clientX: 80,
+      clientY: 80,
+      screenX: 500,
+      screenY: 300,
+      button: 0,
+      pointerId: 1,
+    })
+    fireEvent.pointerMove(canvas, {
+      clientX: 80,
+      clientY: 80,
+      screenX: 510,
+      screenY: 300,
+      pointerId: 1,
+    })
+    expect(lastDrawn()).toBe(11)
+    await advance(3000)
+    expect(lastDrawn()).toBe(11)
+
+    fireEvent.pointerUp(canvas, { pointerId: 1 })
+    expect(lastDrawn()).toBe(0)
+  })
+
+  it('wires pointer moves to click-through', async () => {
+    const mascot = installFakeApi(appInfo)
+    await renderLoaded()
+
+    fireEvent.pointerMove(screen.getByRole('img'), { clientX: 80, clientY: 80 })
 
     expect(mascot.setInteractive).toHaveBeenCalledExactlyOnceWith(true)
-    expect(setPointerCapture).toHaveBeenCalledWith(1)
-    expect(mascot.drag.mock.calls).toEqual([['start'], ['end']])
   })
 
   it('does not start a drag with the right button', async () => {
     const mascot = installFakeApi(appInfo)
-    render(<MascotApp loadFrame={() => Promise.resolve(frame)} />)
-    const canvas = await screen.findByRole('img')
+    await renderLoaded()
 
-    fireEvent.pointerDown(canvas, { clientX: 80, clientY: 80, button: 2, pointerId: 1 })
+    fireEvent.pointerDown(screen.getByRole('img'), {
+      clientX: 80,
+      clientY: 80,
+      button: 2,
+      pointerId: 1,
+    })
 
     expect(mascot.drag).not.toHaveBeenCalled()
+  })
+
+  it('sizes the canvas for the display scale so it stays sharp', async () => {
+    vi.stubGlobal('devicePixelRatio', 1.5)
+    installFakeApi(appInfo)
+    await renderLoaded()
+    const canvas = screen.getByRole<HTMLCanvasElement>('img')
+
+    expect([canvas.width, canvas.height]).toEqual([282, 240])
   })
 
   it('shows nothing when the drawing cannot be loaded', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     installFakeApi(appInfo)
-    render(<MascotApp loadFrame={() => Promise.reject(new Error('decode failed'))} />)
+    await renderLoaded(() => Promise.reject(new Error('decode failed')))
 
-    await vi.waitFor(() => {
-      expect(error).toHaveBeenCalled()
-    })
+    expect(error).toHaveBeenCalled()
     expect(screen.queryByRole('img')).not.toBeInTheDocument()
   })
 })

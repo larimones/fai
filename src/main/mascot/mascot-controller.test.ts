@@ -11,7 +11,7 @@ import {
 
 const PRIMARY = { id: 1, workArea: { x: 0, y: 0, width: 1920, height: 1040 } }
 const LEFT = { id: 2, workArea: { x: -1366, y: 0, width: 1366, height: 728 } }
-const PRIMARY_CORNER = { x: 1920 - 160 - SCREEN_MARGIN_PX, y: 1040 - 160 - SCREEN_MARGIN_PX }
+const PRIMARY_CORNER = { x: 1920 - 188 - SCREEN_MARGIN_PX, y: 1040 - 160 - SCREEN_MARGIN_PX }
 
 function fakeScreen(displays = [LEFT, PRIMARY]) {
   const state = { cursor: { x: 0, y: 0 }, displays }

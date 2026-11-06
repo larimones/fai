@@ -1,56 +1,110 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { currentFrame, handleAnimationEvent, startAnimation } from '@domain/mascot/animation'
 import { FRAME_TO_WINDOW_SCALE, MASCOT_WINDOW_SIZE } from '@domain/mascot/dimensions'
-import type { LoadedFrame } from './mascot/load-frame'
-import { createPointerController } from './mascot/pointer-controller'
+import type { AlphaMask } from '@domain/mascot/hit-test'
+import type { LoadedSheet } from './mascot/load-sprite-sheet'
+import { createPointerController, type PointerController } from './mascot/pointer-controller'
 
 interface MascotProps {
-  readonly frame: LoadedFrame
+  readonly sheet: LoadedSheet
   readonly label: string
 }
 
-export function Mascot({ frame, label }: MascotProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
-  const pointer = useMemo(
-    () =>
-      createPointerController({
-        mascot: window.fai.mascot,
-        getMask: () => frame.mask,
-        scale: FRAME_TO_WINDOW_SCALE,
-        scheduleFrame: (callback) => {
-          requestAnimationFrame(callback)
-        },
-        onGesture: () => undefined,
-      }),
-    [frame],
-  )
+const EMPTY_MASK: AlphaMask = { width: 0, height: 0, alpha: [] }
 
+/** Follows the display scale, so the canvas has one pixel per physical pixel (ADR-0011). */
+function useDevicePixelRatio(): number {
+  const [ratio, setRatio] = useState(() => window.devicePixelRatio)
   useEffect(() => {
-    const context = canvasRef.current?.getContext('2d')
-    if (context === undefined || context === null) {
+    if (typeof window.matchMedia !== 'function') {
       return
     }
-    const { width, height } = MASCOT_WINDOW_SIZE
-    context.imageSmoothingEnabled = true
-    context.imageSmoothingQuality = 'high'
-    context.clearRect(0, 0, width, height)
-    context.drawImage(frame.image, 0, 0, width, height)
-  }, [frame])
+    const query = window.matchMedia(`(resolution: ${String(ratio)}dppx)`)
+    const update = (): void => {
+      setRatio(window.devicePixelRatio)
+    }
+    query.addEventListener('change', update)
+    return () => {
+      query.removeEventListener('change', update)
+    }
+  }, [ratio])
+  return ratio
+}
+
+export function Mascot({ sheet, label }: MascotProps) {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const ratio = useDevicePixelRatio()
+  // Created by the animation loop below; event handlers only read it.
+  const pointerRef = useRef<PointerController | null>(null)
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    const context = canvas?.getContext('2d')
+    let animation = startAnimation(Date.now())
+    let frameIndex = -1
+    let timer: ReturnType<typeof setTimeout> | undefined
+
+    // Draws only when the frame changes and sleeps until the next change: about 6 draws a
+    // second in idle instead of 60 (RNF-08).
+    const tick = (): void => {
+      clearTimeout(timer)
+      const frame = currentFrame(animation, sheet.animations, Date.now())
+      animation = frame.state
+      if (frame.index !== frameIndex) {
+        frameIndex = frame.index
+        pointer.refresh()
+      }
+      const image = sheet.frames[frame.index]?.image
+      if (canvas !== null && context !== undefined && context !== null && image !== undefined) {
+        const { width, height } = canvas
+        context.imageSmoothingEnabled = true
+        context.imageSmoothingQuality = 'high'
+        context.clearRect(0, 0, width, height)
+        context.drawImage(image, 0, 0, width, height)
+      }
+      if (frame.msUntilNext !== null) {
+        timer = setTimeout(tick, frame.msUntilNext)
+      }
+    }
+
+    const pointer = createPointerController({
+      mascot: window.fai.mascot,
+      getMask: () => sheet.frames[frameIndex]?.mask ?? EMPTY_MASK,
+      scale: FRAME_TO_WINDOW_SCALE,
+      scheduleFrame: (callback) => {
+        requestAnimationFrame(callback)
+      },
+      onGesture: (gesture) => {
+        animation = handleAnimationEvent(animation, gesture, Date.now())
+        tick()
+      },
+    })
+    pointerRef.current = pointer
+    tick()
+    return () => {
+      clearTimeout(timer)
+      pointerRef.current = null
+    }
+  }, [sheet, ratio])
 
   return (
     <canvas
       ref={canvasRef}
       className="mascot"
-      width={MASCOT_WINDOW_SIZE.width}
-      height={MASCOT_WINDOW_SIZE.height}
+      width={Math.round(MASCOT_WINDOW_SIZE.width * ratio)}
+      height={Math.round(MASCOT_WINDOW_SIZE.height * ratio)}
       role="img"
       aria-label={label}
       onPointerMove={(event) => {
-        pointer.move({ x: event.clientX, y: event.clientY }, { x: event.screenX, y: event.screenY })
+        pointerRef.current?.move(
+          { x: event.clientX, y: event.clientY },
+          { x: event.screenX, y: event.screenY },
+        )
       }}
       onPointerDown={(event) => {
         if (
           event.button === 0 &&
-          pointer.press(
+          pointerRef.current?.press(
             { x: event.clientX, y: event.clientY },
             { x: event.screenX, y: event.screenY },
           )
@@ -59,16 +113,16 @@ export function Mascot({ frame, label }: MascotProps) {
         }
       }}
       onPointerUp={() => {
-        pointer.release()
+        pointerRef.current?.release()
       }}
       onPointerCancel={() => {
-        pointer.release()
+        pointerRef.current?.release()
       }}
       onLostPointerCapture={() => {
-        pointer.release()
+        pointerRef.current?.release()
       }}
       onPointerLeave={() => {
-        pointer.leave()
+        pointerRef.current?.leave()
       }}
     />
   )

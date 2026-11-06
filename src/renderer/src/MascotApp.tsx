@@ -1,22 +1,22 @@
 import { useEffect, useState } from 'react'
 import { describeAppInfo } from '@domain/app-info'
 import { Mascot } from './Mascot'
-import type { LoadedFrame } from './mascot/load-frame'
+import type { LoadedSheet } from './mascot/load-sprite-sheet'
 
 interface MascotAppProps {
-  readonly loadFrame: () => Promise<LoadedFrame>
+  readonly loadSheet: () => Promise<LoadedSheet>
 }
 
-export function MascotApp({ loadFrame }: MascotAppProps) {
-  const [frame, setFrame] = useState<LoadedFrame | null>(null)
+export function MascotApp({ loadSheet }: MascotAppProps) {
+  const [sheet, setSheet] = useState<LoadedSheet | null>(null)
   const [label, setLabel] = useState('Fai')
 
   useEffect(() => {
     let active = true
-    loadFrame().then(
+    loadSheet().then(
       (loaded) => {
         if (active) {
-          setFrame(loaded)
+          setSheet(loaded)
         }
       },
       (error: unknown) => {
@@ -34,7 +34,7 @@ export function MascotApp({ loadFrame }: MascotAppProps) {
     return () => {
       active = false
     }
-  }, [loadFrame])
+  }, [loadSheet])
 
-  return frame === null ? null : <Mascot frame={frame} label={label} />
+  return sheet === null ? null : <Mascot sheet={sheet} label={label} />
 }
