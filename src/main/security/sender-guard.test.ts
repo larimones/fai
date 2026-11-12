@@ -20,28 +20,36 @@ function fakeEvent(options: {
   return { sender: { mainFrame }, senderFrame } as unknown as IpcMainInvokeEvent
 }
 
+const PANEL_URL = 'file:///opt/Fai/resources/app.asar/out/renderer/panel.html'
+
 describe('createAppUrlMatcher', () => {
-  it('accepts only the renderer file in production', () => {
-    const isAppUrl = createAppUrlMatcher(APP_URL)
+  it('accepts only the renderer pages in production', () => {
+    const isAppUrl = createAppUrlMatcher([APP_URL, PANEL_URL])
 
     expect(isAppUrl(APP_URL)).toBe(true)
+    expect(isAppUrl(PANEL_URL)).toBe(true)
     expect(isAppUrl(`${APP_URL}#/painel`)).toBe(true)
+    expect(isAppUrl('file:///opt/Fai/resources/app.asar/out/renderer/other.html')).toBe(false)
     expect(isAppUrl('file:///home/user/evil.html')).toBe(false)
     expect(isAppUrl('https://example.com')).toBe(false)
     expect(isAppUrl('not a url')).toBe(false)
   })
 
   it('accepts only the dev server origin in development', () => {
-    const isAppUrl = createAppUrlMatcher('http://localhost:5173')
+    const isAppUrl = createAppUrlMatcher([
+      'http://localhost:5173',
+      'http://localhost:5173/panel.html',
+    ])
 
     expect(isAppUrl('http://localhost:5173/index.html')).toBe(true)
+    expect(isAppUrl('http://localhost:5173/panel.html')).toBe(true)
     expect(isAppUrl('http://localhost:5174/')).toBe(false)
     expect(isAppUrl('https://localhost:5173/')).toBe(false)
   })
 })
 
 describe('createSenderGuard (RNF-03 CA3)', () => {
-  const guard = createSenderGuard(createAppUrlMatcher(APP_URL), () => true)
+  const guard = createSenderGuard(createAppUrlMatcher([APP_URL]), () => true)
 
   it('trusts the main frame of a known window showing the app', () => {
     expect(guard(fakeEvent({ url: APP_URL }))).toBe(true)
@@ -54,7 +62,7 @@ describe('createSenderGuard (RNF-03 CA3)', () => {
   })
 
   it('rejects senders that do not belong to a known window', () => {
-    const strictGuard = createSenderGuard(createAppUrlMatcher(APP_URL), () => false)
+    const strictGuard = createSenderGuard(createAppUrlMatcher([APP_URL]), () => false)
 
     expect(strictGuard(fakeEvent({ url: APP_URL }))).toBe(false)
   })

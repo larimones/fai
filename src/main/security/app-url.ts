@@ -1,9 +1,12 @@
 /**
- * Builds a predicate that accepts only URLs of the app's own renderer:
- * the same file in production, the same origin as the Vite dev server in development.
+ * Builds a predicate that accepts only URLs of the app's own renderer pages (the mascot and the
+ * panel, ADR-0014): the same files in production, the same origin as the Vite dev server in
+ * development.
  */
-export function createAppUrlMatcher(rendererEntryUrl: string): (candidate: string) => boolean {
-  const entry = new URL(rendererEntryUrl)
+export function createAppUrlMatcher(
+  rendererEntryUrls: readonly string[],
+): (candidate: string) => boolean {
+  const entries = rendererEntryUrls.map((entry) => new URL(entry))
   return (candidate) => {
     let url: URL
     try {
@@ -11,9 +14,10 @@ export function createAppUrlMatcher(rendererEntryUrl: string): (candidate: strin
     } catch {
       return false
     }
-    if (entry.protocol === 'file:') {
-      return url.protocol === 'file:' && url.pathname === entry.pathname
-    }
-    return url.origin === entry.origin
+    return entries.some((entry) =>
+      entry.protocol === 'file:'
+        ? url.protocol === 'file:' && url.pathname === entry.pathname
+        : url.origin === entry.origin,
+    )
   }
 }

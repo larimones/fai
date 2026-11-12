@@ -12,7 +12,7 @@ import {
   type Tray,
 } from 'electron'
 import type { FaiData } from '@domain/data/fai-data'
-import { registerIpcHandlers } from './ipc/register-handlers'
+import { registerAppHandlers, registerMascotHandlers } from './ipc/register-handlers'
 import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
 import { runWhenSettled } from './mascot/settle'
 import { createDesktopIntegration } from './os/desktop-integration'
@@ -42,7 +42,7 @@ function startApp(): void {
     isDevelopment && devServerUrl !== undefined
       ? devServerUrl
       : pathToFileURL(join(__dirname, '..', 'renderer', 'index.html')).href
-  const isAppUrl = createAppUrlMatcher(rendererEntryUrl)
+  const isAppUrl = createAppUrlMatcher([rendererEntryUrl])
   let mascotWindow: BrowserWindow | undefined
   // Kept for the whole run: a garbage-collected Tray disappears from the system tray.
   let tray: Tray | undefined
@@ -112,18 +112,16 @@ function startApp(): void {
     screen.on('display-removed', keepMascotOnScreen)
     screen.on('display-metrics-changed', keepMascotOnScreen)
 
-    registerIpcHandlers(
-      ipcMain,
-      createSenderGuard(isAppUrl, (sender) => BrowserWindow.fromWebContents(sender) !== null),
-      {
-        getAppInfo: () => ({
-          name: app.getName(),
-          version: app.getVersion(),
-          platform: process.platform,
-        }),
-        mascot,
-      },
-    )
+    // Each channel only accepts the window that owns it (ADR-0014).
+    const isMascotWindow = createSenderGuard(isAppUrl, (sender) => sender === window.webContents)
+    registerAppHandlers(ipcMain, isMascotWindow, {
+      getAppInfo: () => ({
+        name: app.getName(),
+        version: app.getVersion(),
+        platform: process.platform,
+      }),
+    })
+    registerMascotHandlers(ipcMain, isMascotWindow, mascot)
     const resourcesDir = join(app.getAppPath(), 'resources')
     const toggleFai = (): void => {
       toggleWindow(window)
