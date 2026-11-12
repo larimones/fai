@@ -52,7 +52,7 @@ function fakeIpcMain() {
 
 function setup() {
   const ipc = fakeIpcMain()
-  const mascot = { setInteractive: vi.fn(), drag: vi.fn() }
+  const mascot = { setInteractive: vi.fn(), drag: vi.fn(), openMenu: vi.fn() }
   const tasks = {
     list: vi.fn(() => [TASK]),
     create: vi.fn(() => TASK),
@@ -80,6 +80,7 @@ describe('IPC registration (RNF-03, CA16)', () => {
         IpcChannels.tasksDelete,
         IpcChannels.mascotSetInteractive,
         IpcChannels.mascotDrag,
+        IpcChannels.mascotOpenMenu,
       ].sort(),
     )
   })
@@ -89,9 +90,11 @@ describe('IPC registration (RNF-03, CA16)', () => {
 
     send('mascot', IpcChannels.mascotSetInteractive, { interactive: true })
     send('mascot', IpcChannels.mascotDrag, { phase: 'start' })
+    send('mascot', IpcChannels.mascotOpenMenu)
 
     expect(mascot.setInteractive).toHaveBeenCalledExactlyOnceWith(true)
     expect(mascot.drag).toHaveBeenCalledExactlyOnceWith('start')
+    expect(mascot.openMenu).toHaveBeenCalledOnce()
   })
 
   it('ignores mascot messages from the panel window', () => {
@@ -100,9 +103,11 @@ describe('IPC registration (RNF-03, CA16)', () => {
 
     send('panel', IpcChannels.mascotSetInteractive, { interactive: true })
     send('panel', IpcChannels.mascotDrag, { phase: 'start' })
+    send('panel', IpcChannels.mascotOpenMenu)
 
     expect(mascot.setInteractive).not.toHaveBeenCalled()
     expect(mascot.drag).not.toHaveBeenCalled()
+    expect(mascot.openMenu).not.toHaveBeenCalled()
   })
 
   it('routes task requests from the panel window', async () => {

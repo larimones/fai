@@ -3,7 +3,7 @@ import type { FaiApi } from '@shared/ipc/api'
 
 const electron = vi.hoisted(() => ({
   contextBridge: { exposeInMainWorld: vi.fn() },
-  ipcRenderer: { invoke: vi.fn(), send: vi.fn(), on: vi.fn() },
+  ipcRenderer: { invoke: vi.fn(), send: vi.fn(), on: vi.fn(), removeListener: vi.fn() },
 }))
 
 vi.mock('electron', () => electron)
@@ -30,7 +30,12 @@ describe('mascot window preload (RNF-03)', () => {
 
     expect(Object.keys(api)).toEqual(['app', 'mascot'])
     expect(Object.keys(api['app'] as object)).toEqual(['getInfo'])
-    expect(Object.keys(api['mascot'] as object)).toEqual(['setInteractive', 'drag'])
+    expect(Object.keys(api['mascot'] as object)).toEqual([
+      'setInteractive',
+      'drag',
+      'openMenu',
+      'onReaction',
+    ])
     expect(Object.values(api)).not.toContain(electron.ipcRenderer)
   })
 
@@ -69,5 +74,36 @@ describe('mascot window preload (RNF-03)', () => {
       phase: 'move',
     })
     expect(electron.ipcRenderer.invoke).not.toHaveBeenCalled()
+  })
+
+  it('mascot.openMenu sends mascot:open-menu with no payload', async () => {
+    const api = (await loadExposedApi()) as unknown as FaiApi
+
+    api.mascot.openMenu()
+
+    expect(electron.ipcRenderer.send).toHaveBeenCalledExactlyOnceWith('mascot:open-menu')
+  })
+
+  it('mascot.onReaction passes only the validated reaction, and can stop listening', async () => {
+    const api = (await loadExposedApi()) as unknown as FaiApi
+    const listener = vi.fn()
+
+    const stop = api.mascot.onReaction(listener)
+    const [channel, handler] = electron.ipcRenderer.on.mock.calls[0] as [
+      string,
+      (event: unknown, payload?: unknown) => void,
+    ]
+    handler({ sender: 'secret' }, { kind: 'celebrate' })
+    handler({}, { kind: 'explode' })
+    handler({})
+
+    expect(channel).toBe('mascot:reaction')
+    expect(listener.mock.calls).toEqual([[{ kind: 'celebrate' }]])
+
+    stop()
+    expect(electron.ipcRenderer.removeListener).toHaveBeenCalledExactlyOnceWith(
+      'mascot:reaction',
+      handler,
+    )
   })
 })

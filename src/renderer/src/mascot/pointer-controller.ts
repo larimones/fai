@@ -7,7 +7,7 @@ import type { FaiApi } from '@shared/ipc/api'
 export type PointerGesture = 'click' | 'dragStart' | 'dragEnd'
 
 export interface PointerControllerOptions {
-  readonly mascot: FaiApi['mascot']
+  readonly mascot: Pick<FaiApi['mascot'], 'setInteractive' | 'drag'>
   /** Opacity of the frame on screen now; it changes as the mascot animates. */
   readonly getMask: () => AlphaMask
   /** Window pixels per frame pixel. */
@@ -26,6 +26,8 @@ export interface PointerController {
   leave(): void
   /** Re-checks a still pointer after the frame changed under it (CA8). */
   refresh(): void
+  /** Whether a right click at `point` should open Fai's menu: only on the drawing (RF-10 CA1). */
+  wantsMenu(point: WindowPoint): boolean
 }
 
 /** Turns pointer events on the mascot into click-through, drag messages and gestures (RF-05, RF-06, RF-09). */
@@ -94,6 +96,10 @@ export function createPointerController(options: PointerControllerOptions): Poin
         lastPoint = null
         setInteractive(false)
       }
+    },
+
+    wantsMenu(point) {
+      return isInteractiveAt(getMask(), point, scale)
     },
 
     refresh() {

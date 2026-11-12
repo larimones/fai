@@ -90,9 +90,16 @@ export function Mascot({ sheet, label }: MascotProps) {
       tick()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
+    // A completed task makes Fai celebrate (RF-12 CA2).
+    // `celebrate` is the only reaction so far.
+    const stopReactions = window.fai.mascot.onReaction(() => {
+      animation = handleAnimationEvent(animation, 'celebrate', Date.now())
+      tick()
+    })
     pointerRef.current = pointer
     tick()
     return () => {
+      stopReactions()
       clearTimeout(timer)
       document.removeEventListener('visibilitychange', onVisibilityChange)
       pointerRef.current = null
@@ -135,6 +142,14 @@ export function Mascot({ sheet, label }: MascotProps) {
       }}
       onPointerLeave={() => {
         pointerRef.current?.leave()
+      }}
+      onContextMenu={(event) => {
+        // No browser menu; Fai's own menu only opens over the drawing (on Linux the whole
+        // window receives clicks).
+        event.preventDefault()
+        if (pointerRef.current?.wantsMenu({ x: event.clientX, y: event.clientY }) === true) {
+          window.fai.mascot.openMenu()
+        }
       }}
     />
   )

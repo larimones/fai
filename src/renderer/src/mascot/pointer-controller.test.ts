@@ -190,3 +190,12 @@ describe('pointer controller: gestures for the animation (RF-09)', () => {
     expect(gestures).toEqual([])
   })
 })
+
+describe('pointer controller: context menu (RF-10 CA1)', () => {
+  it('wants the menu only for a right click on the drawing', () => {
+    const { controller } = setup()
+
+    expect(controller.wantsMenu(OVER)).toBe(true)
+    expect(controller.wantsMenu(EMPTY)).toBe(false)
+  })
+})

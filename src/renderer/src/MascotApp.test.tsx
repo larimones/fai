@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { AnimationSet } from '@domain/mascot/animation'
 import { FRAME_SIZE } from '@domain/mascot/dimensions'
-import type { FaiApi } from '@shared/ipc/api'
+import type { FaiApi, MascotReaction } from '@shared/ipc/api'
 import type { LoadedSheet } from './mascot/load-sprite-sheet'
 import { MascotApp } from './MascotApp'
 
@@ -14,7 +14,7 @@ const animations: AnimationSet = {
   },
   react: { frames: [8, 9, 10].map((index) => ({ index, durationMs: 240 })), loop: false },
   dragged: { frames: [{ index: 11, durationMs: 1000 }], loop: true },
-  celebrate: { frames: [0, 1, 2].map((index) => ({ index, durationMs: 80 })), loop: false },
+  celebrate: { frames: [9, 10].map((index) => ({ index, durationMs: 80 })), loop: false },
 }
 // Fully opaque frames: every point of the window is on the drawing.
 const images = Array.from({ length: 12 }, () => new Image())
@@ -31,9 +31,25 @@ const sheet: LoadedSheet = {
 }
 
 function installFakeApi(getInfo: FaiApi['app']['getInfo']) {
-  const mascot = { setInteractive: vi.fn(), drag: vi.fn() }
+  const reactionListeners: ((reaction: MascotReaction) => void)[] = []
+  const mascot = {
+    setInteractive: vi.fn(),
+    drag: vi.fn(),
+    openMenu: vi.fn(),
+    onReaction: vi.fn((listener: (reaction: MascotReaction) => void) => {
+      reactionListeners.push(listener)
+      return () => {
+        reactionListeners.splice(reactionListeners.indexOf(listener), 1)
+      }
+    }),
+  }
   vi.stubGlobal('fai', { app: { getInfo }, mascot } satisfies FaiApi)
-  return mascot
+  const react = (reaction: MascotReaction): void => {
+    reactionListeners.forEach((listener) => {
+      listener(reaction)
+    })
+  }
+  return Object.assign(mascot, { react, listening: () => reactionListeners.length })
 }
 
 const appInfo = () =>
@@ -213,6 +229,42 @@ describe('MascotApp (RF-04..06, RF-08, RF-09, RF-01 CA3)', () => {
     expect(lastDrawn()).toBe(0)
     await advance(160)
     expect(lastDrawn()).toBe(1)
+  })
+
+  it('opens the menu on a right click over the drawing (RF-10 CA1)', async () => {
+    const mascot = installFakeApi(appInfo)
+    await renderLoaded()
+
+    fireEvent.contextMenu(screen.getByRole('img'), { clientX: 80, clientY: 80 })
+
+    expect(mascot.openMenu).toHaveBeenCalledOnce()
+  })
+
+  it('celebrates when the main process asks, then goes back to idle (RF-12 CA2)', async () => {
+    const mascot = installFakeApi(appInfo)
+    await renderLoaded()
+
+    act(() => {
+      mascot.react({ kind: 'celebrate' })
+    })
+    expect(lastDrawn()).toBe(9)
+    await advance(80)
+    expect(lastDrawn()).toBe(10)
+    await advance(80)
+    expect(lastDrawn()).toBe(0)
+  })
+
+  it('stops listening for reactions when it goes away', async () => {
+    const mascot = installFakeApi(appInfo)
+    const view = render(<MascotApp loadSheet={() => Promise.resolve(sheet)} />)
+    await act(async () => {
+      await Promise.resolve()
+    })
+    expect(mascot.listening()).toBe(1)
+
+    view.unmount()
+
+    expect(mascot.listening()).toBe(0)
   })
 
   it('shows nothing when the drawing cannot be loaded', async () => {

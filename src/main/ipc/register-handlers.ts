@@ -24,6 +24,7 @@ export function registerAppHandlers(
 export interface MascotIpc {
   readonly setInteractive: (interactive: boolean) => void
   readonly drag: (phase: DragPhase) => void
+  readonly openMenu: () => void
 }
 
 /** The mascot window's channels; `guard` should accept only the mascot window (ADR-0014). */
@@ -38,6 +39,12 @@ export function registerMascotHandlers(ipcMain: Ipc, guard: SenderGuard, mascot:
     IpcChannels.mascotDrag,
     createSendHandler(sendContract[IpcChannels.mascotDrag], guard, ({ phase }) => {
       mascot.drag(phase)
+    }),
+  )
+  ipcMain.on(
+    IpcChannels.mascotOpenMenu,
+    createSendHandler(sendContract[IpcChannels.mascotOpenMenu], guard, () => {
+      mascot.openMenu()
     }),
   )
 }

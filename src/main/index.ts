@@ -22,6 +22,7 @@ import {
   registerTaskHandlers,
 } from './ipc/register-handlers'
 import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
+import { buildMascotMenu } from './mascot/mascot-menu'
 import { runWhenSettled } from './mascot/settle'
 import { createDesktopIntegration } from './os/desktop-integration'
 import { createDataStore } from './persistence/data-store'
@@ -158,7 +159,21 @@ function startApp(): void {
         platform: process.platform,
       }),
     })
-    registerMascotHandlers(ipcMain, isMascotWindow, mascot)
+    const openPanel = (): void => {
+      panel.open()
+    }
+    const mascotMenu = Menu.buildFromTemplate(buildMascotMenu({ openPanel }))
+    registerMascotHandlers(ipcMain, isMascotWindow, {
+      setInteractive: (interactive) => {
+        mascot.setInteractive(interactive)
+      },
+      drag: (phase) => {
+        mascot.drag(phase)
+      },
+      openMenu: () => {
+        mascotMenu.popup({ window })
+      },
+    })
     registerTaskHandlers(
       ipcMain,
       isPanelWindow,
@@ -182,9 +197,6 @@ function startApp(): void {
     const resourcesDir = join(app.getAppPath(), 'resources')
     const toggleFai = (): void => {
       toggleWindow(window)
-    }
-    const openPanel = (): void => {
-      panel.open()
     }
     const quit = (): void => {
       app.quit()

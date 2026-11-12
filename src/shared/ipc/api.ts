@@ -57,6 +57,10 @@ export interface FaiApi {
   readonly mascot: {
     setInteractive(interactive: boolean): void
     drag(phase: DragPhase): void
+    /** Asks the main process for the context menu (RF-10 CA1). */
+    openMenu(): void
+    /** Calls `listener` for each reaction the main process asks for; returns a function that stops listening. */
+    onReaction(listener: (reaction: MascotReaction) => void): () => void
   }
 }
 
