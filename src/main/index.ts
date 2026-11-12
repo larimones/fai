@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import {
@@ -12,7 +13,14 @@ import {
   type Tray,
 } from 'electron'
 import type { FaiData } from '@domain/data/fai-data'
-import { registerAppHandlers, registerMascotHandlers } from './ipc/register-handlers'
+import { MASCOT_WINDOW_SIZE } from '@domain/mascot/dimensions'
+import type { MascotReaction } from '@shared/ipc/api'
+import { IpcChannels } from '@shared/ipc/channels'
+import {
+  registerAppHandlers,
+  registerMascotHandlers,
+  registerTaskHandlers,
+} from './ipc/register-handlers'
 import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
 import { runWhenSettled } from './mascot/settle'
 import { createDesktopIntegration } from './os/desktop-integration'
@@ -21,8 +29,11 @@ import { describeLoadProblem, flushBeforeQuit, needsInitialSave } from './persis
 import { createAppUrlMatcher } from './security/app-url'
 import { hardenSession, hardenWebContents } from './security/harden'
 import { createSenderGuard } from './security/sender-guard'
+import { createPanelController } from './panel/panel-controller'
+import { createTaskService } from './tasks/task-service'
 import { buildTrayMenu } from './tray/tray-menu'
 import { createMascotWindow } from './windows/mascot-window'
+import { createPanelWindow, PANEL_SIZE } from './windows/panel-window'
 import { revealWindow, toggleWindow } from './windows/reveal-window'
 
 /** How long monitors must stay unchanged before the mascot is brought back on screen. */
@@ -42,7 +53,11 @@ function startApp(): void {
     isDevelopment && devServerUrl !== undefined
       ? devServerUrl
       : pathToFileURL(join(__dirname, '..', 'renderer', 'index.html')).href
-  const isAppUrl = createAppUrlMatcher([rendererEntryUrl])
+  const panelEntryUrl =
+    isDevelopment && devServerUrl !== undefined
+      ? new URL('panel.html', devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`).href
+      : pathToFileURL(join(__dirname, '..', 'renderer', 'panel.html')).href
+  const isAppUrl = createAppUrlMatcher([rendererEntryUrl, panelEntryUrl])
   let mascotWindow: BrowserWindow | undefined
   // Kept for the whole run: a garbage-collected Tray disappears from the system tray.
   let tray: Tray | undefined
@@ -93,6 +108,17 @@ function startApp(): void {
       devTools: isDevelopment,
     })
     mascotWindow = window
+    const panelWindow = createPanelWindow(panelEntryUrl, { devTools: isDevelopment })
+    const panel = createPanelController({
+      window: panelWindow,
+      size: PANEL_SIZE,
+      mascotSize: MASCOT_WINDOW_SIZE,
+      getMascotPosition: () => {
+        const [x = 0, y = 0] = window.getPosition()
+        return { x, y }
+      },
+      workAreaFor: (rectangle) => screen.getDisplayMatching(rectangle).workArea,
+    })
     const mascot = createMascotController({
       window,
       screen,
@@ -102,6 +128,9 @@ function startApp(): void {
       savePosition: (position) => {
         data = { ...data, mascot: { ...data.mascot, position } }
         dataStore.save(data)
+      },
+      onMoved: (position) => {
+        panel.follow(position)
       },
     })
     const keepMascotOnScreen = runWhenSettled(() => {
@@ -114,7 +143,15 @@ function startApp(): void {
 
     // Each channel only accepts the window that owns it (ADR-0014).
     const isMascotWindow = createSenderGuard(isAppUrl, (sender) => sender === window.webContents)
-    registerAppHandlers(ipcMain, isMascotWindow, {
+    const isPanelWindow = createSenderGuard(
+      isAppUrl,
+      (sender) => sender === panelWindow.webContents,
+    )
+    const isAppWindow = createSenderGuard(
+      isAppUrl,
+      (sender) => sender === window.webContents || sender === panelWindow.webContents,
+    )
+    registerAppHandlers(ipcMain, isAppWindow, {
       getAppInfo: () => ({
         name: app.getName(),
         version: app.getVersion(),
@@ -122,9 +159,32 @@ function startApp(): void {
       }),
     })
     registerMascotHandlers(ipcMain, isMascotWindow, mascot)
+    registerTaskHandlers(
+      ipcMain,
+      isPanelWindow,
+      createTaskService({
+        store: {
+          read: () => data.tasks,
+          write: (tasks) => {
+            data = { ...data, tasks }
+            dataStore.save(data)
+          },
+        },
+        newId: () => randomUUID(),
+        now: () => new Date().toISOString(),
+        celebrate: () => {
+          window.webContents.send(IpcChannels.mascotReaction, {
+            kind: 'celebrate',
+          } satisfies MascotReaction)
+        },
+      }),
+    )
     const resourcesDir = join(app.getAppPath(), 'resources')
     const toggleFai = (): void => {
       toggleWindow(window)
+    }
+    const openPanel = (): void => {
+      panel.open()
     }
     const quit = (): void => {
       app.quit()
@@ -133,7 +193,7 @@ function startApp(): void {
       // nativeImage picks tray-icon@2x.png by itself on high-DPI screens.
       icon: nativeImage.createFromPath(join(resourcesDir, 'tray-icon.png')),
       tooltip: 'Fai',
-      menu: Menu.buildFromTemplate(buildTrayMenu({ toggleFai, quit })),
+      menu: Menu.buildFromTemplate(buildTrayMenu({ toggleFai, openPanel, quit })),
       onActivate: toggleFai,
     })
 

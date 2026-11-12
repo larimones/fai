@@ -18,6 +18,8 @@ export interface MascotControllerOptions {
   readonly setClickThrough: (enabled: boolean) => void
   /** Persists a position the user chose or the app had to correct. */
   readonly savePosition: (position: ScreenPoint) => void
+  /** Each position the controller applies, so the open panel can follow (ADR-0014). */
+  readonly onMoved?: (position: ScreenPoint) => void
 }
 
 export interface MascotController {
@@ -47,7 +49,7 @@ export function initialMascotPosition(
 }
 
 export function createMascotController(options: MascotControllerOptions): MascotController {
-  const { window, screen, setClickThrough, savePosition } = options
+  const { window, screen, setClickThrough, savePosition, onMoved } = options
   let interactive = false
   let drag: DragState | null = null
   // On X11 the window manager applies setPosition later, so getPosition can lag behind a drag.
@@ -83,6 +85,7 @@ export function createMascotController(options: MascotControllerOptions): Mascot
           drag = step.state
           if (step.position !== null) {
             window.setPosition(step.position.x, step.position.y)
+            onMoved?.(step.position)
             draggedTo = step.position
           }
           break
@@ -102,6 +105,7 @@ export function createMascotController(options: MascotControllerOptions): Mascot
       const next = resolveMascotPosition(current, toDisplayAreas(screen), MASCOT_WINDOW_SIZE)
       if (next.x !== current.x || next.y !== current.y) {
         window.setPosition(next.x, next.y)
+        onMoved?.(next)
         savePosition(next)
       }
     },

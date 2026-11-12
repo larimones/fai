@@ -1,0 +1,30 @@
+/* The panel window is see-through around a rounded card (ADR-0014). Full style in T5.10. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+  font-family: system-ui, sans-serif;
+}
+
+.panel {
+  box-sizing: border-box;
+  height: 100%;
+  padding: 16px;
+  border: 2px solid #d9c8f5;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #f4eefd 100%);
+  color: #4a3470;
+}
+
+.panel__title {
+  margin: 0 0 12px;
+  font-size: 17px;
+  color: #6b45b5;
+}
+
+.panel__list {
+  margin: 0;
+  padding-left: 18px;
+}

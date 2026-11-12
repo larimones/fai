@@ -38,8 +38,15 @@ function setup(start: ScreenPoint = { x: 500, y: 300 }) {
   const window = fakeWindow(start)
   const setClickThrough = vi.fn()
   const savePosition = vi.fn()
-  const controller = createMascotController({ window, screen, setClickThrough, savePosition })
-  return { state, window, setClickThrough, savePosition, controller }
+  const onMoved = vi.fn()
+  const controller = createMascotController({
+    window,
+    screen,
+    setClickThrough,
+    savePosition,
+    onMoved,
+  })
+  return { state, window, setClickThrough, savePosition, onMoved, controller }
 }
 
 describe('mascot click-through (RF-05)', () => {
@@ -165,5 +172,35 @@ describe('mascot position (RF-07)', () => {
 
     expect(window.setPosition).not.toHaveBeenCalled()
     expect(savePosition).not.toHaveBeenCalled()
+  })
+})
+
+describe('mascot moves for the panel (ADR-0014)', () => {
+  it('reports each position it applies while dragging, not the one the window reports', () => {
+    const { controller, state, onMoved, window } = setup()
+    // On X11 the window manager applies setPosition later.
+    window.setPosition.mockImplementation(() => undefined)
+
+    state.cursor = { x: 560, y: 360 }
+    controller.drag('start')
+    state.cursor = { x: 600, y: 380 }
+    controller.drag('move')
+    state.cursor = { x: 562, y: 361 }
+    controller.drag('move')
+
+    expect(onMoved.mock.calls).toEqual([[{ x: 540, y: 320 }], [{ x: 502, y: 301 }]])
+  })
+
+  it('reports when it brings Fai back on screen, and not for a click', () => {
+    const { controller, state, onMoved } = setup({ x: -800, y: 100 })
+
+    state.cursor = { x: -760, y: 140 }
+    controller.drag('start')
+    controller.drag('end')
+    expect(onMoved).not.toHaveBeenCalled()
+
+    state.displays = [PRIMARY]
+    controller.keepOnScreen()
+    expect(onMoved).toHaveBeenCalledExactlyOnceWith(PRIMARY_CORNER)
   })
 })

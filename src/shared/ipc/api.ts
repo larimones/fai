@@ -1,4 +1,5 @@
 import type { AppInfo } from '@domain/app-info'
+import type { Task } from '@domain/tasks/tasks'
 
 export type IpcErrorCode =
   | 'INVALID_PAYLOAD'
@@ -57,4 +58,16 @@ export interface FaiApi {
     setInteractive(interactive: boolean): void
     drag(phase: DragPhase): void
   }
+}
+
+/** The whole surface exposed to the panel window as `window.faiPanel` (ADR-0014). */
+export interface PanelApi {
+  readonly tasks: {
+    list(): Promise<IpcResult<readonly Task[]>>
+    create(title: string): Promise<IpcResult<Task>>
+    setDone(id: string, done: boolean): Promise<IpcResult<Task>>
+    delete(id: string): Promise<IpcResult<null>>
+  }
+  /** Calls `listener` each time the panel is opened; returns a function that stops listening. */
+  onOpened(listener: () => void): () => void
 }

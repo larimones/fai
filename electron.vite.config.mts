@@ -32,13 +32,28 @@ export default defineConfig({
     build: {
       // Sandboxed preloads cannot require() node_modules, so dependencies (zod) are bundled.
       externalizeDeps: false,
+      // Nor local files: with two preloads, shared code would go to a separate chunk that the
+      // sandbox cannot load, so each preload is built as one standalone file (ADR-0014).
+      isolatedEntries: true,
       rolldownOptions: {
-        input: { mascot: resolve('src/preload/mascot.ts') },
+        input: {
+          mascot: resolve('src/preload/mascot.ts'),
+          panel: resolve('src/preload/panel.ts'),
+        },
       },
     },
   },
   renderer: {
     resolve: { alias },
     plugins: [react(), contentSecurityPolicy()],
+    build: {
+      // Two pages, each with its own preload: the mascot and the task panel (ADR-0014).
+      rolldownOptions: {
+        input: {
+          index: resolve('src/renderer/index.html'),
+          panel: resolve('src/renderer/panel.html'),
+        },
+      },
+    },
   },
 })
