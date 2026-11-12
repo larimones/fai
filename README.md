@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 5 (painel de tarefas) com tarefas prontas: um painel pastel ao lado da Fai para criar, concluir, reabrir e excluir tarefas, com a Fai comemorando cada conclusão. As Etapas 3 e 4 (janela transparente, arrasto, animação e reações) estão concluídas. Veja [specs/features/05-painel-de-tarefas/tasks.md](specs/features/05-painel-de-tarefas/tasks.md).
+> **Status:** Etapa 5 (painel de tarefas) implementada, em verificação: com o clique direito na Fai (ou pela bandeja) abre-se um painel pastel ao lado dela para criar, concluir, reabrir e excluir tarefas, e ela comemora cada conclusão. Falta a verificação final nas duas máquinas. Veja [specs/features/05-painel-de-tarefas/tasks.md](specs/features/05-painel-de-tarefas/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -78,7 +78,13 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 - **Arrastar:** segure a Fai com o botão esquerdo e arraste; ela pode ir para qualquer monitor. Ela reabre onde você a deixou. Se aquele monitor não estiver mais conectado, ela volta para o canto do monitor principal.
 - **Cliques em volta dela:** no Windows, os cliques no espaço vazio em volta do desenho (entre as asas, por exemplo) passam para o que estiver atrás. No Linux isso não é possível: o retângulo inteiro de 188×160 px bloqueia cliques (ADR-0004).
 - **Animação:** em repouso, a Fai bate as asas e pisca sorrindo. Um clique rápido nela faz uma piscada sorridente, e ela volta ao repouso; enquanto é arrastada, fica com as asas paradas no alto. Quando está oculta, a animação para e não gasta processamento. A reação ao clique e a pose de "sendo carregada" ainda usam arte provisória.
-- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai" e "Sair".
+- **Tarefas:** clique com o botão direito sobre o desenho da Fai e escolha "Abrir painel" (ou use "Abrir painel" na bandeja). O painel abre ao lado dela, já com o campo pronto para digitar:
+  - escreva a tarefa e aperte Enter (ou clique em **+**); a nova aparece no topo;
+  - clique na bolinha para concluir: a Fai comemora, e a tarefa vai para **Concluídas (N)**, que fica recolhida e abre com um clique; lá a bolinha reabre a tarefa;
+  - o **✕** pergunta "Excluir esta tarefa?" na própria linha, com **Sim** e **Não**;
+  - o painel fecha sozinho quando você clica fora dele, e também com Esc; ele acompanha a Fai se você a arrastar com ele aberto;
+  - tudo funciona pelo teclado (Tab, Enter, Espaço, Esc).
+- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai", "Abrir painel" e "Sair".
 - **Fechar:** a Fai não tem botão de fechar; use "Sair" no menu da bandeja. "Mostrar/ocultar Fai" só a esconde, e o app continua rodando.
 - **Instância única:** abrir o app de novo não cria outra Fai; se ela estiver oculta, reaparece.
 
@@ -91,7 +97,7 @@ Tudo fica em um arquivo JSON local, sem rede (ADR-0003):
 | Windows | `%APPDATA%\Fai\fai-data.json` (ex.: `C:\Users\<você>\AppData\Roaming\Fai\`) |
 | Linux   | `~/.config/Fai/fai-data.json` (ou `$XDG_CONFIG_HOME/Fai/`)                  |
 
-`npm run dev`, `npm run preview` e o build usam o mesmo arquivo.
+`npm run dev`, `npm run preview` e o build usam o mesmo arquivo. Ele guarda a posição da Fai e as tarefas (versão 2 do formato; um arquivo da versão 1, de antes da Etapa 5, é convertido sozinho no primeiro início, sem perder a posição).
 
 - **Arquivo danificado:** se o arquivo não puder ser lido, a Fai guarda uma cópia como `fai-data.corrupt-<data>.json` na mesma pasta, começa do zero e avisa. A data no nome está em UTC (sufixo `Z`). Se o arquivo existir mas não puder ser lido nem movido (por exemplo, por permissão), a Fai avisa e não salva nada naquela execução, para não sobrescrevê-lo.
 - **Começar do zero:** feche a Fai (menu da bandeja → "Sair") e apague ou renomeie o `fai-data.json`. Ele é recriado no próximo início.

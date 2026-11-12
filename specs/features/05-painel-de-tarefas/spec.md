@@ -1,7 +1,7 @@
 # Feature 05 — Painel de tarefas
 
 - **Etapa:** 5 (Tarefas)
-- **Status:** em implementação
+- **Status:** em verificação
 - **Requisitos:** RF-10, RF-11, RF-12, RF-13, RF-17, RF-03 CA1 ("Abrir painel"), RNF-09, RNF-10
 
 ## Objetivo

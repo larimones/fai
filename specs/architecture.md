@@ -46,7 +46,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
 - **Renderer**: React sem Node. Janelas:
   - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Substituída pela janela da mascote na Etapa 3; na Etapa 5 surge o painel.
   - **Mascote (Etapa 3)**: 188×160 px lógicos (ADR-0013), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
-  - **Painel (Etapa 5)**: janela pequena, sem barra de tarefas, para tarefas e lembretes.
+  - **Painel (Etapa 5)**: 320×440 px lógicos, sem moldura, fora da barra de tarefas, sempre no topo; ao contrário da mascote, recebe foco. Abre ao lado da Fai e fecha ao perder o foco ou com Esc. Detalhes no ADR-0014 e na seção "Painel de tarefas (Etapa 5)".
 
 ## Contrato IPC
 
@@ -55,8 +55,8 @@ Regras:
 1. Canais nomeados `dominio:acao`, declarados em `src/shared/ipc/channels.ts` como constantes.
 2. Cada canal tem schema zod de entrada e saída em `src/shared/ipc/schemas.ts`.
 3. Renderer → main por `ipcRenderer.invoke` (request/response) ou `send` (eventos de alta frequência, como arrasto). Main → renderer por `webContents.send` em canais de evento declarados.
-4. O handler no main: (a) verifica o remetente — o `webContents` pertence a uma janela conhecida e `senderFrame.url` tem a origem do app; (b) faz `schema.parse` do payload; (c) executa; (d) retorna objeto validado. Erros viram `{ ok: false, error: { code, message } }`, sem stack para o renderer.
-5. O preload nunca repassa o `event` do Electron ao renderer.
+4. O handler no main: (a) verifica o remetente — o `webContents` é **a janela dona do canal** (`mascot:*` só a mascote, `tasks:*` só o painel, `app:get-info` as duas; ADR-0014) e `senderFrame.url` é uma das páginas do app; (b) faz `schema.parse` do payload; (c) executa; (d) retorna objeto validado. Erros viram `{ ok: false, error: { code, message } }`, sem stack para o renderer; recusas de regra (`INVALID_TITLE`, `NOT_FOUND`) vêm do serviço como `IpcRuleError`, com mensagem em pt-BR para mostrar na tela.
+5. O preload nunca repassa o `event` do Electron ao renderer, e valida com o `eventContract` o payload dos eventos main → janela antes de repassá-lo.
 
 Canais (✅ implementados; demais planejados, revisados em cada etapa):
 
@@ -65,16 +65,16 @@ Canais (✅ implementados; demais planejados, revisados em cada etapa):
 | `app:get-info` ✅           | invoke        | todas   | —                                                                                                      | `{ name, version, platform }` |
 | `mascot:set-interactive` ✅ | send          | mascote | `{ interactive: boolean }`                                                                             | —                             |
 | `mascot:drag` ✅            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main)                                              | —                             |
-| `mascot:open-menu`          | send          | mascote | —                                                                                                      | —                             |
-| `mascot:reaction`           | evento main→r | mascote | `{ kind: 'celebrate'\|'reminder' }`                                                                    | —                             |
-| `tasks:list`                | invoke        | painel  | —                                                                                                      | `Task[]`                      |
-| `tasks:create`              | invoke        | painel  | `{ title }`                                                                                            | `Task`                        |
-| `tasks:set-done`            | invoke        | painel  | `{ id, done }`                                                                                         | `Task`                        |
-| `tasks:delete`              | invoke        | painel  | `{ id }`                                                                                               | —                             |
+| `mascot:open-menu` ✅       | send          | mascote | —                                                                                                      | —                             |
+| `mascot:reaction` ✅        | evento main→r | mascote | `{ kind: 'celebrate' }` (`'reminder'` na Etapa 6)                                                      | —                             |
+| `tasks:list` ✅             | invoke        | painel  | —                                                                                                      | `Task[]`                      |
+| `tasks:create` ✅           | invoke        | painel  | `{ title }`                                                                                            | `Task`                        |
+| `tasks:set-done` ✅         | invoke        | painel  | `{ id, done }`                                                                                         | `Task`                        |
+| `tasks:delete` ✅           | invoke        | painel  | `{ id }`                                                                                               | —                             |
 | `reminders:list`            | invoke        | painel  | —                                                                                                      | `Reminder[]`                  |
 | `reminders:create`          | invoke        | painel  | `{ text, dueAt (ISO 8601) }`                                                                           | `Reminder`                    |
 | `reminders:delete`          | invoke        | painel  | `{ id }`                                                                                               | —                             |
-| `panel:opened`              | evento main→r | painel  | — (o painel recarrega a lista, recolhe "Concluídas" e foca o campo)                                    | —                             |
+| `panel:opened` ✅           | evento main→r | painel  | — (o painel recarrega a lista, recolhe "Concluídas" e foca o campo)                                    | —                             |
 | `data:changed`              | evento main→r | painel  | `{ tasks, reminders }` (adiado: só o painel muda tarefas e recebe cada resultado; plano da feature 05) | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
@@ -84,20 +84,31 @@ API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.t
 Um documento JSON em `app.getPath('userData')/fai-data.json` (ADR-0003):
 
 ```json
-{ "schemaVersion": 1, "mascot": { "position": null } }
+{
+  "schemaVersion": 2,
+  "mascot": { "position": { "x": 1716, "y": 864 } },
+  "tasks": [
+    {
+      "id": "6f1c2a4e-…",
+      "title": "Regar as plantas",
+      "createdAt": "2026-11-12T15:00:00.000Z",
+      "completedAt": null
+    }
+  ]
+}
 ```
 
-A v1 traz só o que existe na Etapa 2. Tarefas (`tasks: []`) e lembretes (`reminders: []`) entram por migração nas Etapas 5 e 6, quando seus formatos forem definidos (decisão de 2026-10-22).
+A v1 (Etapas 2 a 4) tinha só `mascot`. A v2 (Etapa 5, ADR-0015) acrescenta `tasks`, na ordem de criação; a migração `1 → 2` acrescenta `tasks: []`. Lembretes (`reminders`) entram por migração na Etapa 6.
 
 Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
 
-- **Leitura** (`load()`, na inicialização, antes de criar janelas): envelope zod (`schemaVersion` inteiro positivo) → `migrateToCurrent` (domínio) → schema estrito da versão atual. Nunca rejeita; devolve um `status`:
+- **Leitura** (`load()`, na inicialização, antes de criar janelas): envelope zod (`schemaVersion` inteiro positivo) → schema estrito **da versão de origem** (`sourceSchemas`) → `migrateToCurrent` (domínio) → schema estrito da versão atual. Nunca rejeita; devolve um `status`:
   - `created` (arquivo ausente), `loaded`, `migrated`;
   - `quarantined`: JSON inválido, documento inválido, versão futura ou sem caminho de migração → o arquivo é renomeado para `fai-data.corrupt-<AAAAMMDDTHHMMSSZ>.json` (UTC, sem `:`), o app começa vazio e avisa com um diálogo;
   - `unavailable`: o arquivo existe, mas não pôde ser lido nem renomeado → o app começa vazio, avisa e **não grava** nesta execução, para não sobrescrever o arquivo.
 - **Escrita** (`save()`): _debounce_ de 200 ms (o último dado vence), fila serializada, `writeFile(fai-data.json.tmp)` + `rename` para o final; novas tentativas em `EPERM`/`EBUSY`/`EACCES` após 50, 100, 200 e 400 ms (antivírus no Windows). Falha persistente → `onError`, `.tmp` removido, arquivo anterior intacto.
 - **Inicialização e encerramento** (`startup.ts`): `created`, `migrated` e `quarantined` gravam o documento na hora; `before-quit` espera o `flush()` antes de encerrar.
-- Enquanto só existe a v1, o documento é validado uma vez, depois da migração. Com a v2, o schema da versão de origem também valida **antes** de migrar.
+- O schema da v2 só aceita tarefas que o domínio poderia ter criado (UUID, instantes ISO, título dentro da regra); um arquivo editado à mão com tarefa inválida vai para a quarentena.
 
 ## Estratégia multiplataforma
 
@@ -148,3 +159,12 @@ Implementada conforme o ADR-0005, o ADR-0011 e o ADR-0013:
 - **Contrato** (`shared/sprite-sheet-schema.ts`): schema zod do metadado; os campos do Aseprite que o app não usa são descartados.
 - **Renderer**: `load-sprite-sheet.ts` valida o JSON da folha e o das máscaras de clique (prontas, geradas pelo script; `domain/mascot/mask-runs.ts` as decodifica), decodifica a folha, importada como arquivo comum, e recorta os quadros (`ImageBitmap`); nenhum pixel é lido de volta do canvas. `Mascot.tsx` guarda o estado da animação e o controle de ponteiro dentro de um único efeito; desenha só quando o quadro muda e dorme num `setTimeout` até a próxima troca (cerca de 6 desenhos por segundo no repouso). O canvas tem _backing store_ de 188×160 × `devicePixelRatio`, refeito quando a escala muda. O _hit-test_ usa a máscara do quadro na tela e é refeito quando o quadro troca sob o cursor parado. Os gestos (clique, início e fim de arrasto) saem do controle de ponteiro com o mesmo limiar de 4 px do main, sem canal IPC novo.
 - **Pausa**: com `document.hidden` (ocultar a janela afeta a Page Visibility API, `backgroundThrottling` ligado), o laço não desenha nem agenda nada; ao reaparecer, recomeça o `idle`.
+
+## Painel de tarefas (Etapa 5)
+
+Implementado conforme o ADR-0014 e o ADR-0015:
+
+- **Domínio** (`domain/tasks/tasks.ts`, `domain/panel/placement.ts`): regras das tarefas como funções puras sobre uma lista imutável, com ID e instante por parâmetro (título de 1 a 200 pontos de código, concluir e reabrir, `NOT_FOUND`, ordem do painel); posição do painel à esquerda da Fai, senão à direita, alinhado pela base e dentro da área de trabalho. A animação ganhou o estado `celebrating` (toca uma vez, ignorado durante o arrasto).
+- **Main**: `tasks/task-service.ts` aplica as regras sobre `data.tasks`, grava pelo `DataStore`, gera o UUID e o instante, e pede a comemoração (`mascot:reaction`) só quando uma tarefa pendente é concluída. `panel/panel-controller.ts` posiciona, mostra e foca a janela do painel (`windows/panel-window.ts`), avisa `panel:opened`, esconde no `blur` e no Esc (`before-input-event`) e acompanha a posição que o controle da Fai acabou de aplicar (`onMoved`; no X11 `getPosition` atrasa). O menu de contexto da Fai (`mascot/mascot-menu.ts`, só "Abrir painel") abre com `Menu.popup` a partir de `mascot:open-menu`; a bandeja ganhou "Abrir painel". Os canais são registrados por janela (`registerAppHandlers`, `registerMascotHandlers`, `registerTaskHandlers`), cada um com a guarda da sua janela.
+- **Preloads**: dois, cada um num arquivo único (`isolatedEntries` no `electron.vite.config.mts`: um preload em sandbox não carrega pedaços separados por `require`). `preload/panel.ts` expõe `window.faiPanel` (`tasks.*`, `onOpened`); o da mascote ganhou `openMenu` e `onReaction`.
+- **Renderer**: segunda página, `panel.html`. `panel/PanelApp.tsx` (estado e ações), `TaskForm.tsx` e `TaskRow.tsx`; a cada `panel:opened` recarrega a lista, recolhe "Concluídas (N)", desfaz a pergunta de exclusão e foca o campo. Estilo em `panel.css`, com as cores em variáveis no `:root`; `tests/ui/panel-contrast.test.ts` mede cada par (4,5:1 para texto, 3:1 para bordas e foco). A mascote abre o menu no clique direito sobre o desenho e comemora ao receber `mascot:reaction`.
