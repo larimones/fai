@@ -1,7 +1,7 @@
 # Feature 06 — Lembretes e notificações
 
 - **Etapa:** 6 (Lembretes e notificações)
-- **Status:** em implementação
+- **Status:** em verificação
 - **Requisitos:** RF-14, RF-15, RF-16, RF-17, RNF-03, RNF-09, RNF-10
 
 ## Objetivo

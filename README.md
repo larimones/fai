@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 6 (lembretes e notificações) com tarefas prontas: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md).
+> **Status:** Etapa 6 (lembretes e notificações) implementada, em verificação: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -77,13 +77,18 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 - **A Fai:** aparece no canto inferior direito do monitor principal, por cima das outras janelas, sem moldura e sem botão na barra de tarefas. Ela não rouba o foco de quem está digitando.
 - **Arrastar:** segure a Fai com o botão esquerdo e arraste; ela pode ir para qualquer monitor. Ela reabre onde você a deixou. Se aquele monitor não estiver mais conectado, ela volta para o canto do monitor principal.
 - **Cliques em volta dela:** no Windows, os cliques no espaço vazio em volta do desenho (entre as asas, por exemplo) passam para o que estiver atrás. No Linux isso não é possível: o retângulo inteiro de 188×160 px bloqueia cliques (ADR-0004).
-- **Animação:** em repouso, a Fai bate as asas e pisca sorrindo. Um clique rápido nela faz uma piscada sorridente, e ela volta ao repouso; enquanto é arrastada, fica com as asas paradas no alto. Quando está oculta, a animação para e não gasta processamento. A reação ao clique e a pose de "sendo carregada" ainda usam arte provisória.
-- **Tarefas:** clique com o botão direito sobre o desenho da Fai e escolha "Abrir painel" (ou use "Abrir painel" na bandeja). O painel abre ao lado dela, já com o campo pronto para digitar:
+- **Animação:** em repouso, a Fai bate as asas e pisca sorrindo. Um clique rápido nela faz uma piscada sorridente, e ela volta ao repouso; enquanto é arrastada, fica com as asas paradas no alto. Quando está oculta, a animação para e não gasta processamento. Num lembrete, ela pisca sorrindo três vezes. A reação ao clique, a pose de "sendo carregada", a comemoração e a piscada do lembrete ainda usam arte provisória.
+- **Tarefas:** clique com o botão direito sobre o desenho da Fai e escolha "Abrir painel" (ou use "Abrir painel" na bandeja). O painel abre ao lado dela, na aba **Tarefas**, já com o campo pronto para digitar (as setas ← → trocam de aba):
   - escreva a tarefa e aperte Enter (ou clique em **+**); a nova aparece no topo;
   - clique na bolinha para concluir: a Fai comemora, e a tarefa vai para **Concluídas (N)**, que fica recolhida e abre com um clique; lá a bolinha reabre a tarefa;
   - o **✕** pergunta "Excluir esta tarefa?" na própria linha, com **Sim** e **Não**;
   - o painel fecha sozinho quando você clica fora dele, e também com Esc; ele acompanha a Fai se você a arrastar com ele aberto;
   - tudo funciona pelo teclado (Tab, Enter, Espaço, Esc).
+- **Lembretes:** na aba **Lembretes** do painel, escreva do que a Fai deve lembrar e escolha quando: um atalho (**em 15 min**, **em 1 h**, **amanhã 9h**) preenche o campo de data e hora, que também dá para ajustar à mão; depois aperte Enter ou **+**.
+  - na hora (com até uns 15 s de atraso), aparece uma notificação do sistema com o texto, e a Fai pisca; clicar na notificação abre o painel direto em **Lembretes**;
+  - os já avisados vão para **Avisados (N)**, recolhida; dá para excluir pendentes e avisados pelo **✕**, com confirmação na linha;
+  - se a Fai estava fechada ou o computador dormindo na hora, o aviso sai assim que ela abre ou o computador acorda, marcado **atrasado**; com mais de 3 atrasados de uma vez, sai uma notificação só: "Você tem N lembretes atrasados";
+  - cada lembrete avisa uma vez só, mesmo que a notificação falhe.
 - **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai", "Abrir painel" e "Sair".
 - **Fechar:** a Fai não tem botão de fechar; use "Sair" no menu da bandeja. "Mostrar/ocultar Fai" só a esconde, e o app continua rodando.
 - **Instância única:** abrir o app de novo não cria outra Fai; se ela estiver oculta, reaparece.
@@ -97,7 +102,7 @@ Tudo fica em um arquivo JSON local, sem rede (ADR-0003):
 | Windows | `%APPDATA%\Fai\fai-data.json` (ex.: `C:\Users\<você>\AppData\Roaming\Fai\`) |
 | Linux   | `~/.config/Fai/fai-data.json` (ou `$XDG_CONFIG_HOME/Fai/`)                  |
 
-`npm run dev`, `npm run preview` e o build usam o mesmo arquivo. Ele guarda a posição da Fai e as tarefas (versão 2 do formato; um arquivo da versão 1, de antes da Etapa 5, é convertido sozinho no primeiro início, sem perder a posição).
+`npm run dev`, `npm run preview` e o build usam o mesmo arquivo. Ele guarda a posição da Fai, as tarefas e os lembretes (versão 3 do formato; arquivos das versões 1 e 2, de antes das Etapas 5 e 6, são convertidos sozinhos no primeiro início, sem perder nada).
 
 - **Arquivo danificado:** se o arquivo não puder ser lido, a Fai guarda uma cópia como `fai-data.corrupt-<data>.json` na mesma pasta, começa do zero e avisa. A data no nome está em UTC (sufixo `Z`). Se o arquivo existir mas não puder ser lido nem movido (por exemplo, por permissão), a Fai avisa e não salva nada naquela execução, para não sobrescrevê-lo.
 - **Começar do zero:** feche a Fai (menu da bandeja → "Sair") e apague ou renomeie o `fai-data.json`. Ele é recriado no próximo início.
@@ -131,6 +136,7 @@ Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O re
 - **Windows: a estrela não aparece na bandeja:** o Windows esconde ícones novos na setinha **^** perto do relógio. Para deixá-la sempre visível, arraste-a para a barra ou ative-a em Configurações → Personalização → Barra de tarefas → Outros ícones da bandeja do sistema.
 - **Linux: a estrela não aparece na bandeja:** o ícone exige suporte a AppIndicator/StatusNotifier. No Ubuntu, a extensão "Ubuntu AppIndicators" já vem ativa; em outros GNOME, instale a extensão "AppIndicator and KStatusNotifierItem Support". KDE tem suporte nativo. Sem a bandeja, a Fai funciona, mas não há como fechá-la pela interface: encerre com Ctrl+C no terminal onde rodou `npm run dev`/`npm run preview`.
 - **Linux/Wayland: o app fecha sozinho (`exited with signal SIGTRAP`) ao mostrar um aviso:** o Electron está no backend Wayland nativo, em que os diálogos derrubam o processo. Use `npm run dev`/`npm run preview`, que já forçam XWayland, ou rode `electron --ozone-platform=x11 .` (ADR-0010).
+- **A notificação de um lembrete não aparece:** confira se o sistema não está em "Não perturbe" (ou "Assistente de foco", no Windows); a Fai pisca e o lembrete vai para "Avisados" mesmo assim. No Windows, antes do instalador (Etapa 7), a notificação pode aparecer com nome genérico ou não aparecer ao rodar pelo `npm run dev`/`preview` (ADR-0016).
 - **`Error: Electron uninstall` ou `Electron failed to install correctly`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Com o Node 22 ativo (`nvm use`), rode `node node_modules/electron/install.js` e tente de novo.
 - **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
 
