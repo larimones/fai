@@ -1,4 +1,5 @@
 import type { AppInfo } from '@domain/app-info'
+import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 
 export type IpcErrorCode =
@@ -94,6 +95,13 @@ export interface PanelApi {
     setDone(id: string, done: boolean): Promise<IpcResult<Task>>
     delete(id: string): Promise<IpcResult<null>>
   }
+  readonly reminders: {
+    list(): Promise<IpcResult<readonly Reminder[]>>
+    create(text: string, dueAt: string): Promise<IpcResult<Reminder>>
+    delete(id: string): Promise<IpcResult<null>>
+  }
   /** Calls `listener` each time the panel is opened; returns a function that stops listening. */
   onOpened(listener: (tab: PanelTab) => void): () => void
+  /** Calls `listener` when the main process changed the reminders (ADR-0016). */
+  onRemindersChanged(listener: () => void): () => void
 }

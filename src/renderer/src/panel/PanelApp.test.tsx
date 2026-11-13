@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type { IpcResult, PanelApi } from '@shared/ipc/api'
 import { PanelApp } from './PanelApp'
@@ -45,12 +46,19 @@ function installFakePanel(initial: Task[] = []) {
   }
   const api: PanelApi = {
     tasks: spies,
+    // The reminders tab arrives in T6.10; until then the panel does not call these.
+    reminders: {
+      list: vi.fn(() => ok([])),
+      create: vi.fn(() => fail<Reminder>('NOT_FOUND', 'unused')),
+      delete: vi.fn(() => ok(null)),
+    },
     onOpened: (listener) => {
       openedListener = listener
       return () => {
         openedListener = undefined
       }
     },
+    onRemindersChanged: () => () => undefined,
   }
   vi.stubGlobal('faiPanel', api)
   return {

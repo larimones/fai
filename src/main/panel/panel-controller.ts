@@ -1,7 +1,7 @@
 import type { ScreenPoint } from '@domain/data/fai-data'
 import type { Rectangle, Size } from '@domain/mascot/geometry'
 import { placePanel } from '@domain/panel/placement'
-import type { PanelOpened } from '@shared/ipc/api'
+import type { PanelOpened, PanelTab } from '@shared/ipc/api'
 import { IpcChannels } from '@shared/ipc/channels'
 
 /** The parts of the panel's BrowserWindow the controller uses. */
@@ -34,8 +34,11 @@ export interface PanelControllerOptions {
 }
 
 export interface PanelController {
-  /** Shows the panel next to Fai and focuses it; if it is already open, only focuses it. */
-  open(): void
+  /**
+   * Shows the panel next to Fai on `tab` and focuses it; if it is already open, only focuses it
+   * and switches to `tab` (ADR-0016).
+   */
+  open(tab: PanelTab): void
   /** Keeps an open panel next to Fai, who was just moved to `position`. */
   follow(position: ScreenPoint): void
 }
@@ -62,13 +65,13 @@ export function createPanelController(options: PanelControllerOptions): PanelCon
   })
 
   return {
-    open() {
+    open(tab) {
       if (!window.isVisible()) {
         placeNextTo(getMascotPosition())
         window.show()
       }
       window.focus()
-      window.webContents.send(IpcChannels.panelOpened, { tab: 'tasks' } satisfies PanelOpened)
+      window.webContents.send(IpcChannels.panelOpened, { tab } satisfies PanelOpened)
     },
 
     follow(position) {

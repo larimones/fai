@@ -8,6 +8,7 @@ import {
   ipcMain,
   Menu,
   nativeImage,
+  powerMonitor,
   screen,
   session,
   type Tray,
@@ -19,6 +20,7 @@ import { IpcChannels } from '@shared/ipc/channels'
 import {
   registerAppHandlers,
   registerMascotHandlers,
+  registerReminderHandlers,
   registerTaskHandlers,
 } from './ipc/register-handlers'
 import { createMascotController, initialMascotPosition } from './mascot/mascot-controller'
@@ -31,6 +33,8 @@ import { createAppUrlMatcher } from './security/app-url'
 import { hardenSession, hardenWebContents } from './security/harden'
 import { createSenderGuard } from './security/sender-guard'
 import { createPanelController } from './panel/panel-controller'
+import { createReminderService } from './reminders/reminder-service'
+import { createReminderScheduler } from './reminders/scheduler'
 import { createTaskService } from './tasks/task-service'
 import { buildTrayMenu } from './tray/tray-menu'
 import { createMascotWindow } from './windows/mascot-window'
@@ -104,6 +108,8 @@ function startApp(): void {
     }
 
     const desktop = createDesktopIntegration(process.platform)
+    // Before the first notification, so Windows shows it under Fai's name (ADR-0016).
+    desktop.prepareNotifications()
     const window = createMascotWindow(rendererEntryUrl, {
       position: initialMascotPosition(data.mascot.position, screen),
       devTools: isDevelopment,
@@ -159,8 +165,9 @@ function startApp(): void {
         platform: process.platform,
       }),
     })
+    // The menu and the tray open the tasks tab; a reminder notification, the reminders tab.
     const openPanel = (): void => {
-      panel.open()
+      panel.open('tasks')
     }
     const mascotMenu = Menu.buildFromTemplate(buildMascotMenu({ openPanel }))
     registerMascotHandlers(ipcMain, isMascotWindow, {
@@ -194,6 +201,47 @@ function startApp(): void {
         },
       }),
     )
+    const now = (): string => new Date().toISOString()
+    const reminderStore = {
+      read: () => data.reminders,
+      write: (reminders: FaiData['reminders']) => {
+        data = { ...data, reminders }
+        dataStore.save(data)
+      },
+    }
+    const scheduler = createReminderScheduler({
+      store: reminderStore,
+      now,
+      notify: ({ title, body }) => {
+        desktop.notify({
+          title,
+          body,
+          onClick: () => {
+            panel.open('reminders')
+          },
+        })
+      },
+      react: () => {
+        window.webContents.send(IpcChannels.mascotReaction, {
+          kind: 'reminder',
+        } satisfies MascotReaction)
+      },
+      changed: () => {
+        panelWindow.webContents.send(IpcChannels.remindersChanged)
+      },
+    })
+    registerReminderHandlers(
+      ipcMain,
+      isPanelWindow,
+      createReminderService({
+        store: reminderStore,
+        newId: () => randomUUID(),
+        now,
+        onCreated: () => {
+          scheduler.check()
+        },
+      }),
+    )
     const resourcesDir = join(app.getAppPath(), 'resources')
     const toggleFai = (): void => {
       toggleWindow(window)
@@ -207,6 +255,18 @@ function startApp(): void {
       tooltip: 'Fai',
       menu: Menu.buildFromTemplate(buildTrayMenu({ toggleFai, openPanel, quit })),
       onActivate: toggleFai,
+    })
+
+    // Reminders missed while the app was closed are announced now, marked late (RF-16).
+    // The first check waits for Fai's page, or her reaction would be lost.
+    window.webContents.once('did-finish-load', () => {
+      scheduler.check()
+    })
+    const stopScheduler = scheduler.start()
+    app.on('will-quit', stopScheduler)
+    // After sleep, the interval may not have run for hours (ADR-0006).
+    powerMonitor.on('resume', () => {
+      scheduler.check()
     })
 
     const notice = describeLoadProblem(loaded, dataFilePath)

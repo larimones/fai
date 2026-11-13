@@ -255,6 +255,21 @@ describe('MascotApp (RF-04..06, RF-08, RF-09, RF-01 CA3)', () => {
     expect(lastDrawn()).toBe(0)
   })
 
+  it('blinks for a reminder when the main process asks, then goes back to idle (ADR-0016)', async () => {
+    const mascot = installFakeApi(appInfo)
+    await renderLoaded()
+
+    act(() => {
+      mascot.react({ kind: 'reminder' })
+    })
+    expect(lastDrawn()).toBe(8)
+    await advance(240)
+    expect(lastDrawn()).toBe(9)
+    await advance(240)
+    await advance(240)
+    expect(lastDrawn()).toBe(0)
+  })
+
   it('stops listening for reactions when it goes away', async () => {
     const mascot = installFakeApi(appInfo)
     const view = render(<MascotApp loadSheet={() => Promise.resolve(sheet)} />)

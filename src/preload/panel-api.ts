@@ -1,7 +1,10 @@
 import type { IpcRenderer } from 'electron'
+import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type {
+  CreateReminderRequest,
   CreateTaskRequest,
+  DeleteReminderRequest,
   DeleteTaskRequest,
   IpcResult,
   PanelApi,
@@ -31,6 +34,18 @@ export function createPanelApi(
           IpcResult<null>
         >,
     },
+    reminders: {
+      list: () => ipc.invoke(IpcChannels.remindersList) as Promise<IpcResult<readonly Reminder[]>>,
+      create: (text, dueAt) =>
+        ipc.invoke(IpcChannels.remindersCreate, {
+          text,
+          dueAt,
+        } satisfies CreateReminderRequest) as Promise<IpcResult<Reminder>>,
+      delete: (id) =>
+        ipc.invoke(IpcChannels.remindersDelete, { id } satisfies DeleteReminderRequest) as Promise<
+          IpcResult<null>
+        >,
+    },
     onOpened(listener) {
       // The Electron event never reaches the page, and an unexpected payload is dropped.
       const handler = (_event: unknown, payload?: unknown): void => {
@@ -42,6 +57,17 @@ export function createPanelApi(
       ipc.on(IpcChannels.panelOpened, handler)
       return () => {
         ipc.removeListener(IpcChannels.panelOpened, handler)
+      }
+    },
+    onRemindersChanged(listener) {
+      const handler = (_event: unknown, payload?: unknown): void => {
+        if (eventContract[IpcChannels.remindersChanged].safeParse(payload).success) {
+          listener()
+        }
+      }
+      ipc.on(IpcChannels.remindersChanged, handler)
+      return () => {
+        ipc.removeListener(IpcChannels.remindersChanged, handler)
       }
     },
   }

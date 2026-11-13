@@ -26,11 +26,12 @@ describe('panel window preload (RNF-03, ADR-0014)', () => {
     return api
   }
 
-  it('exposes exactly the task functions and the opened event', async () => {
+  it('exposes exactly the task and reminder functions and the two events', async () => {
     const api = await loadExposedApi()
 
-    expect(Object.keys(api)).toEqual(['tasks', 'onOpened'])
+    expect(Object.keys(api)).toEqual(['tasks', 'reminders', 'onOpened', 'onRemindersChanged'])
     expect(Object.keys(api.tasks)).toEqual(['list', 'create', 'setDone', 'delete'])
+    expect(Object.keys(api.reminders)).toEqual(['list', 'create', 'delete'])
     expect(Object.values(api)).not.toContain(electron.ipcRenderer)
   })
 
@@ -49,6 +50,40 @@ describe('panel window preload (RNF-03, ADR-0014)', () => {
       ['tasks:delete', { id: ID }],
     ])
     expect(electron.ipcRenderer.send).not.toHaveBeenCalled()
+  })
+
+  it('invokes each reminder channel with only its own payload (ADR-0016)', async () => {
+    const api = await loadExposedApi()
+    const dueAt = '2026-11-13T18:30:00.000Z'
+
+    await api.reminders.list()
+    await api.reminders.create('Tomar água', dueAt)
+    await api.reminders.delete(ID)
+
+    expect(electron.ipcRenderer.invoke.mock.calls).toEqual([
+      ['reminders:list'],
+      ['reminders:create', { text: 'Tomar água', dueAt }],
+      ['reminders:delete', { id: ID }],
+    ])
+  })
+
+  it('calls the reminders-changed listener with nothing, ignores payloads, and can stop', async () => {
+    const api = await loadExposedApi()
+    const listener = vi.fn()
+
+    const stop = api.onRemindersChanged(listener)
+    const [channel, handler] = electron.ipcRenderer.on.mock.calls[0] as [string, Handler]
+    handler({ sender: 'secret' })
+    handler({}, { surprise: true })
+
+    expect(channel).toBe('reminders:changed')
+    expect(listener).toHaveBeenCalledExactlyOnceWith()
+
+    stop()
+    expect(electron.ipcRenderer.removeListener).toHaveBeenCalledExactlyOnceWith(
+      'reminders:changed',
+      handler,
+    )
   })
 
   it('calls the opened listener without the Electron event, and can stop listening', async () => {

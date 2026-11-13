@@ -90,10 +90,10 @@ export function Mascot({ sheet, label }: MascotProps) {
       tick()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    // A completed task makes Fai celebrate (RF-12 CA2).
-    // `celebrate` is the only reaction so far.
-    const stopReactions = window.fai.mascot.onReaction(() => {
-      animation = handleAnimationEvent(animation, 'celebrate', Date.now())
+    // A completed task makes Fai celebrate (RF-12 CA2); a reminder makes her blink (ADR-0016).
+    const stopReactions = window.fai.mascot.onReaction((reaction) => {
+      const event = reaction.kind === 'reminder' ? 'remind' : 'celebrate'
+      animation = handleAnimationEvent(animation, event, Date.now())
       tick()
     })
     pointerRef.current = pointer

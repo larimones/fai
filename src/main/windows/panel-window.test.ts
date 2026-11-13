@@ -6,11 +6,11 @@ vi.mock('electron', () => ({ BrowserWindow: vi.fn() }))
 describe('panelWindowOptions (ADR-0014)', () => {
   const options = panelWindowOptions('/app/preload/panel.js', { devTools: false })
 
-  it('is a 320×440 frameless see-through window, hidden until opened', () => {
-    expect(PANEL_SIZE).toEqual({ width: 320, height: 440 })
+  it('is a 320×520 frameless see-through window, hidden until opened (ADR-0016)', () => {
+    expect(PANEL_SIZE).toEqual({ width: 320, height: 520 })
     expect(options).toMatchObject({
       width: 320,
-      height: 440,
+      height: 520,
       useContentSize: true,
       frame: false,
       transparent: true,

@@ -4,7 +4,8 @@ import type { Size } from '@domain/mascot/geometry'
 import { secureWebPreferences } from './secure-web-preferences'
 
 /** The task panel, in logical pixels (ADR-0014). */
-export const PANEL_SIZE: Size = { width: 320, height: 440 }
+/** 320×440 until the reminders form arrived (ADR-0016). */
+export const PANEL_SIZE: Size = { width: 320, height: 520 }
 
 /**
  * A small frameless window, see-through for its rounded corners, floating like Fai. Unlike the

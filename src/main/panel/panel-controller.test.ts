@@ -63,7 +63,7 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
   it('opens next to Fai, focused, and tells the page it was opened', () => {
     const { window, controller } = setup()
 
-    controller.open()
+    controller.open('tasks')
 
     expect(window.setPosition).toHaveBeenCalledExactlyOnceWith(
       1716 - PANEL_GAP_PX - 320,
@@ -79,20 +79,23 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
     )
   })
 
-  it('opening again while open only focuses it and tells the page again', () => {
+  it('opening again while open only focuses it and tells the page which tab to show', () => {
     const { window, controller } = setup()
 
-    controller.open()
-    controller.open()
+    controller.open('tasks')
+    controller.open('reminders')
 
     expect(window.show).toHaveBeenCalledOnce()
     expect(window.focus).toHaveBeenCalledTimes(2)
-    expect(window.webContents.send).toHaveBeenCalledTimes(2)
+    expect(window.webContents.send.mock.calls).toEqual([
+      [IpcChannels.panelOpened, { tab: 'tasks' }],
+      [IpcChannels.panelOpened, { tab: 'reminders' }],
+    ])
   })
 
   it('hides when it loses focus', () => {
     const { window, controller, emit } = setup()
-    controller.open()
+    controller.open('tasks')
 
     emit('blur')
 
@@ -101,7 +104,7 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
 
   it('hides on Escape, and only on Escape key presses', () => {
     const { window, controller, press } = setup()
-    controller.open()
+    controller.open('tasks')
 
     press('a')
     press('Escape', 'keyUp')
@@ -114,7 +117,7 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
 
   it('follows Fai while open, to the position she was just moved to', () => {
     const { window, controller } = setup()
-    controller.open()
+    controller.open('tasks')
     window.setPosition.mockClear()
 
     controller.follow({ x: 1500, y: 600 })
