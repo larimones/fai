@@ -1,5 +1,5 @@
 /*
- * Task panel, style A: pastel lilac and white (owner's choice, ADR-0014). Every text pair is
+ * Fai's panel, style A: pastel lilac and white (owner's choice, ADR-0014; tabs in ADR-0016). Every text pair is
  * checked for 4.5:1 and every control border for 3:1 by panel-contrast.test.ts, which reads
  * these tokens.
  */
@@ -76,6 +76,45 @@ body,
   font-weight: 700;
 }
 
+.tabs {
+  display: flex;
+  gap: 4px;
+  padding: 3px;
+  border-radius: 12px;
+  background: var(--chip);
+}
+
+.tabs__tab {
+  flex: 1;
+  border: 0;
+  border-radius: 10px;
+  padding: 6px;
+  background: transparent;
+  color: var(--chip-text);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.tabs__tab[aria-selected='true'] {
+  background: var(--row);
+  color: var(--title);
+  box-shadow: 0 1px 3px rgb(74 52 112 / 15%);
+}
+
+/* Each tab fills the space between the tabs and the footer; only its list scrolls. */
+.panel__tab {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.panel__tab[hidden] {
+  display: none;
+}
+
 .new-task__row {
   display: flex;
   gap: 6px;
@@ -101,6 +140,42 @@ body,
   color: var(--error);
   font-size: 12px;
   font-weight: 600;
+}
+
+.when {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.when__shortcut {
+  border: 1.5px solid var(--field-border);
+  border-radius: 999px;
+  padding: 3px 9px;
+  background: var(--row);
+  color: var(--accent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.when__shortcut[aria-pressed='true'] {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.when__field {
+  border: 1.5px solid var(--field-border);
+  border-radius: 10px;
+  padding: 4px 6px;
+  background: var(--row);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
 }
 
 .button {
@@ -134,6 +209,8 @@ body,
   gap: 6px;
   min-height: 0;
   overflow-y: auto;
+  scrollbar-color: var(--accent) transparent;
+  scrollbar-width: thin;
 }
 
 .tasks {
@@ -168,6 +245,33 @@ body,
 .task--done .task__title {
   color: var(--muted);
   text-decoration: line-through;
+}
+
+.reminder__time {
+  flex: none;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: var(--chip);
+  color: var(--chip-text);
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.reminder__body {
+  display: flex;
+  flex: 1;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  min-width: 0;
+}
+
+/* Kept out of the struck title so it stays readable (owner's review of the mockup). */
+.reminder__late {
+  color: var(--error);
+  font-size: 11px;
+  font-weight: 700;
 }
 
 .task__check {

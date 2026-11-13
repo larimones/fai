@@ -1,139 +1,165 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 'react'
+import { type Reminder, reminderView } from '@domain/reminders/reminders'
 import { panelView, type Task } from '@domain/tasks/tasks'
-import type { IpcResult } from '@shared/ipc/api'
-import { TaskForm } from './TaskForm'
-import { TaskRow } from './TaskRow'
+import type { PanelTab } from '@shared/ipc/api'
+import { RemindersTab } from './RemindersTab'
+import { TasksTab } from './TasksTab'
 
-function pendingLabel(count: number): string {
-  return count === 1 ? '1 pendente' : `${String(count)} pendentes`
+const TABS: readonly (readonly [PanelTab, string])[] = [
+  ['tasks', 'Tarefas'],
+  ['reminders', 'Lembretes'],
+]
+
+const plural = (count: number, one: string, many: string): string =>
+  count === 1 ? `1 ${one}` : `${String(count)} ${many}`
+
+const currentInstant = (): string => new Date().toISOString()
+
+interface PanelAppProps {
+  /** The current instant, ISO 8601 in UTC; tests fix it. */
+  readonly now?: () => string
 }
 
-/** The task panel (RF-10..13): opens clean each time, with the completed tasks folded away. */
-export function PanelApp() {
+/** Fai's panel: "Tarefas" and "Lembretes" tabs (ADR-0014, ADR-0016). */
+export function PanelApp({ now = currentInstant }: PanelAppProps) {
+  const [tab, setTab] = useState<PanelTab>('tasks')
   const [tasks, setTasks] = useState<readonly Task[]>([])
-  const [title, setTitle] = useState('')
-  const [error, setError] = useState<string | null>(null)
-  const [confirmingId, setConfirmingId] = useState<string | null>(null)
-  const [showCompleted, setShowCompleted] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const [reminders, setReminders] = useState<{
+    readonly list: readonly Reminder[]
+    readonly loadedAt: string
+  }>(() => ({ list: [], loadedAt: now() }))
+  const tabRefs = useRef(new Map<PanelTab, HTMLButtonElement>())
 
-  const reload = useCallback(async (): Promise<void> => {
+  const reloadTasks = useCallback(async (): Promise<void> => {
     const result = await window.faiPanel.tasks.list()
     if (result.ok) {
       setTasks(result.value)
     }
   }, [])
 
-  /** Applies a change from the main process; on refusal shows its message and resyncs the list. */
-  const apply = useCallback(
-    async (change: Promise<IpcResult<unknown>>): Promise<boolean> => {
-      const result = await change
-      if (!result.ok) {
-        setError(result.error.message)
-      }
-      await reload()
-      return result.ok
-    },
-    [reload],
-  )
+  const reloadReminders = useCallback(async (): Promise<void> => {
+    const result = await window.faiPanel.reminders.list()
+    if (result.ok) {
+      setReminders({ list: result.value, loadedAt: now() })
+    }
+  }, [now])
 
   useEffect(() => {
     let active = true
-    const load = (): void => {
+    const loadTasks = (): void => {
       void window.faiPanel.tasks.list().then((result) => {
         if (active && result.ok) {
           setTasks(result.value)
         }
       })
     }
-    load()
-    inputRef.current?.focus()
-    // Each opening starts clean: fresh list, completed folded, no question, field focused.
-    const stopListening = window.faiPanel.onOpened(() => {
-      setShowCompleted(false)
-      setConfirmingId(null)
-      setError(null)
-      load()
-      inputRef.current?.focus()
+    const loadReminders = (): void => {
+      void window.faiPanel.reminders.list().then((result) => {
+        if (active && result.ok) {
+          setReminders({ list: result.value, loadedAt: now() })
+        }
+      })
+    }
+    loadTasks()
+    loadReminders()
+    // Each opening shows the tab asked for, with fresh lists.
+    const stopOpened = window.faiPanel.onOpened((opened) => {
+      setTab(opened)
+      loadTasks()
+      loadReminders()
     })
+    // The scheduler announced something while the panel is open.
+    const stopChanged = window.faiPanel.onRemindersChanged(loadReminders)
     return () => {
       active = false
-      stopListening()
+      stopOpened()
+      stopChanged()
     }
-  }, [])
+  }, [now])
 
-  const { pending, completed } = panelView(tasks)
+  /** Arrow keys, Home and End move between tabs, as in the WAI-ARIA tabs pattern. */
+  const onTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>): void => {
+    const index = TABS.findIndex(([id]) => id === tab)
+    const next = {
+      ArrowRight: (index + 1) % TABS.length,
+      ArrowLeft: (index - 1 + TABS.length) % TABS.length,
+      Home: 0,
+      End: TABS.length - 1,
+    }[event.key]
+    const target = next === undefined ? undefined : TABS[next]?.[0]
+    if (target === undefined) {
+      return
+    }
+    event.preventDefault()
+    setTab(target)
+    tabRefs.current.get(target)?.focus()
+  }
 
-  const rowFor = (task: Task) => (
-    <TaskRow
-      key={task.id}
-      task={task}
-      confirming={confirmingId === task.id}
-      onToggle={() => {
-        void apply(window.faiPanel.tasks.setDone(task.id, task.completedAt === null))
-      }}
-      onAskDelete={() => {
-        setConfirmingId(task.id)
-      }}
-      onConfirmDelete={() => {
-        setConfirmingId(null)
-        void apply(window.faiPanel.tasks.delete(task.id))
-      }}
-      onCancelDelete={() => {
-        setConfirmingId(null)
-      }}
-    />
-  )
+  const chip =
+    tab === 'tasks'
+      ? plural(panelView(tasks).pending.length, 'pendente', 'pendentes')
+      : plural(reminderView(reminders.list).pending.length, 'lembrete', 'lembretes')
 
   return (
     <main className="panel">
       <header className="panel__header">
-        <h1 className="panel__title">✿ Tarefas da Fai</h1>
-        <span className="panel__chip">{pendingLabel(pending.length)}</span>
+        <h1 className="panel__title">✿ Fai</h1>
+        <span className="panel__chip">{chip}</span>
       </header>
 
-      <TaskForm
-        title={title}
-        error={error}
-        inputRef={inputRef}
-        onTitleChange={(next) => {
-          setTitle(next)
-          setError(null)
-        }}
-        onSubmit={() => {
-          void apply(window.faiPanel.tasks.create(title)).then((created) => {
-            if (created) {
-              setTitle('')
-            }
-          })
-        }}
-      />
-
-      <div className="panel__lists">
-        <ul className="tasks" aria-label="Pendentes">
-          {pending.map(rowFor)}
-        </ul>
-        {pending.length === 0 && (
-          <p className="panel__empty">Nada por aqui. Que tal anotar algo?</p>
-        )}
-
-        <button
-          className="completed-toggle"
-          type="button"
-          aria-expanded={showCompleted}
-          aria-controls="completed-tasks"
-          onClick={() => {
-            setShowCompleted((open) => !open)
-          }}
-        >
-          Concluídas ({completed.length})
-        </button>
-        {showCompleted && (
-          <ul id="completed-tasks" className="tasks" aria-label="Concluídas">
-            {completed.map(rowFor)}
-          </ul>
-        )}
+      <div className="tabs" role="tablist" aria-label="Seções do painel">
+        {TABS.map(([id, label]) => (
+          <button
+            key={id}
+            ref={(element) => {
+              if (element === null) {
+                tabRefs.current.delete(id)
+              } else {
+                tabRefs.current.set(id, element)
+              }
+            }}
+            id={`tab-${id}`}
+            className="tabs__tab"
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            aria-controls={`tabpanel-${id}`}
+            tabIndex={tab === id ? 0 : -1}
+            onClick={() => {
+              setTab(id)
+            }}
+            onKeyDown={onTabKeyDown}
+          >
+            {label}
+          </button>
+        ))}
       </div>
+
+      {/* Both stay mounted, so a half-typed text survives a trip to the other tab. */}
+      <section
+        id="tabpanel-tasks"
+        className="panel__tab"
+        role="tabpanel"
+        aria-labelledby="tab-tasks"
+        hidden={tab !== 'tasks'}
+      >
+        <TasksTab tasks={tasks} active={tab === 'tasks'} reload={reloadTasks} />
+      </section>
+      <section
+        id="tabpanel-reminders"
+        className="panel__tab"
+        role="tabpanel"
+        aria-labelledby="tab-reminders"
+        hidden={tab !== 'reminders'}
+      >
+        <RemindersTab
+          reminders={reminders.list}
+          loadedAt={reminders.loadedAt}
+          active={tab === 'reminders'}
+          now={now}
+          reload={reloadReminders}
+        />
+      </section>
 
       <p className="panel__footer" aria-hidden="true">
         ✦ você consegue ✦

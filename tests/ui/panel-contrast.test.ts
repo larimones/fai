@@ -47,11 +47,16 @@ describe('panel colors (RNF-10 CA1, CA14)', () => {
     ['on-accent', 'accent'],
     ['accent', 'row'],
     ['error', 'surface-end'],
+    // Reminders tab (ADR-0016): selected tab, "atrasado" in a row.
+    ['title', 'row'],
+    ['error', 'row'],
   ]
   const nonText: [string, string][] = [
     ['field-border', 'row'],
     ['focus', 'surface-end'],
     ['focus', 'row'],
+    // The lilac scrollbar thumb of the lists.
+    ['accent', 'surface-end'],
   ]
 
   it.each(text)('--%s on --%s reaches 4.5:1', (foreground, background) => {
