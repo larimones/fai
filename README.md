@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 6 (lembretes e notificações) implementada, em verificação: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md).
+> **Status:** Etapa 6 (lembretes e notificações) verificada no Linux, falta o Windows: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md).
 
 ## Ferramentas necessárias
 
