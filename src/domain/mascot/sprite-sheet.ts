@@ -38,6 +38,7 @@ const LOOPS: Readonly<Record<AnimationName, boolean>> = {
   react: false,
   dragged: true,
   celebrate: false,
+  remind: false,
 }
 
 export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
@@ -64,12 +65,13 @@ export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
       loop: LOOPS[name],
     }
   }
-  const { idle, react, dragged, celebrate } = animations
+  const { idle, react, dragged, celebrate, remind } = animations
   if (
     idle === undefined ||
     react === undefined ||
     dragged === undefined ||
-    celebrate === undefined
+    celebrate === undefined ||
+    remind === undefined
   ) {
     return { ok: false, error: 'Animações incompletas.' }
   }
@@ -82,7 +84,7 @@ export function toSpriteSheet(metadata: SheetMetadata): SpriteSheetResult {
         width: frame.w,
         height: frame.h,
       })),
-      animations: { idle, react, dragged, celebrate },
+      animations: { idle, react, dragged, celebrate, remind },
     },
   }
 }

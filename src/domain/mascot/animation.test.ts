@@ -71,6 +71,13 @@ const animations: AnimationSet = {
     ],
     loop: false,
   },
+  remind: {
+    frames: [
+      { index: 2, durationMs: 100 },
+      { index: 3, durationMs: 100 },
+    ],
+    loop: false,
+  },
 }
 
 describe('mascot animation states (RF-09 CA3)', () => {
@@ -177,5 +184,41 @@ describe('celebrating (RF-12 CA2)', () => {
       mood: 'dragging',
       since: 160,
     })
+  })
+})
+
+describe('reminding (RF-15 CA1)', () => {
+  it('plays once and then goes back to idle from the moment it ended', () => {
+    const reminding = handleAnimationEvent(startAnimation(0), 'remind', 1000)
+
+    expect(currentFrame(reminding, animations, 1000)).toMatchObject({
+      state: { mood: 'reminding' },
+      index: 2,
+    })
+    expect(currentFrame(reminding, animations, 1150)).toMatchObject({ index: 3 })
+    expect(currentFrame(reminding, animations, 1250)).toEqual({
+      state: { mood: 'idle', since: 1200 },
+      index: 0,
+      msUntilNext: 50,
+    })
+  })
+
+  it('interrupts idle, a reaction and a celebration, and is skipped while Fai is carried', () => {
+    const reacting = handleAnimationEvent(startAnimation(0), 'click', 100)
+    const celebrating = handleAnimationEvent(startAnimation(0), 'celebrate', 100)
+    const dragging = handleAnimationEvent(startAnimation(0), 'dragStart', 100)
+
+    expect(handleAnimationEvent(reacting, 'remind', 200)).toEqual({ mood: 'reminding', since: 200 })
+    expect(handleAnimationEvent(celebrating, 'remind', 200)).toEqual({
+      mood: 'reminding',
+      since: 200,
+    })
+    expect(handleAnimationEvent(dragging, 'remind', 200)).toBe(dragging)
+  })
+
+  it('ignores clicks while reminding', () => {
+    const reminding = handleAnimationEvent(startAnimation(0), 'remind', 100)
+
+    expect(handleAnimationEvent(reminding, 'click', 150)).toBe(reminding)
   })
 })

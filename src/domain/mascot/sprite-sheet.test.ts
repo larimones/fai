@@ -16,6 +16,7 @@ const metadata: SheetMetadata = {
       { name: 'react', from: 2, to: 2 },
       { name: 'dragged', from: 3, to: 3 },
       { name: 'celebrate', from: 4, to: 4 },
+      { name: 'remind', from: 2, to: 2 },
     ],
   },
 }
@@ -45,6 +46,7 @@ describe('toSpriteSheet', () => {
           react: { frames: [{ index: 2, durationMs: 240 }], loop: false },
           dragged: { frames: [{ index: 3, durationMs: 1000 }], loop: true },
           celebrate: { frames: [{ index: 4, durationMs: 80 }], loop: false },
+          remind: { frames: [{ index: 2, durationMs: 240 }], loop: false },
         },
       },
     })

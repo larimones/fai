@@ -48,6 +48,8 @@ ANIMATIONS: list[tuple[str, list[tuple[int, int]]]] = [
     ("dragged", [(0, 1000)]),
     # Provisional: two fast wing cycles, then the smiling blink (owner's choice, 2026-11-06).
     ("celebrate", [(index, 80) for index in range(8)] * 2 + [(3, 240), (4, 240), (5, 240)]),
+    # Provisional: the smiling blink three times, to call attention to a reminder (2026-11-13).
+    ("remind", [(3, 240), (4, 240), (5, 240)] * 3),
 ]
 
 

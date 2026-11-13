@@ -15,12 +15,12 @@ function realSheet() {
 }
 
 describe('fai-sheet assets in the repository (RF-08 CA2, CA8)', () => {
-  it('fai-sheet.json passes the schema and has the four animations with their timing', () => {
+  it('fai-sheet.json passes the schema and has the five animations with their timing', () => {
     const { frames, animations } = realSheet()
     const drawings = new Set(frames.map(({ x, y }) => `${String(x)},${String(y)}`))
 
-    // 31 animation frames over the 8 drawings of the GIF, each stored once (ADR-0013).
-    expect(frames).toHaveLength(31)
+    // 40 animation frames over the 8 drawings of the GIF, each stored once (ADR-0013).
+    expect(frames).toHaveLength(40)
     expect(drawings.size).toBe(8)
     expect(frames.every(({ width, height }) => width === 376 && height === 320)).toBe(true)
     expect(animations.idle.loop).toBe(true)
@@ -28,6 +28,10 @@ describe('fai-sheet assets in the repository (RF-08 CA2, CA8)', () => {
     expect(animations.react).toMatchObject({ loop: false })
     expect(animations.react.frames.map((frame) => frame.durationMs)).toEqual([240, 240, 240])
     expect(animations.dragged).toMatchObject({ loop: true, frames: [{ index: 11 }] })
+    expect(animations.remind.loop).toBe(false)
+    expect(animations.remind.frames.map((frame) => frame.durationMs)).toEqual(
+      Array<number>(9).fill(240),
+    )
     expect(animations.celebrate.loop).toBe(false)
     expect(animations.celebrate.frames.map((frame) => frame.durationMs)).toEqual([
       ...Array<number>(16).fill(80),
@@ -49,7 +53,7 @@ describe('fai-sheet assets in the repository (RF-08 CA2, CA8)', () => {
     const [idle] = result.masks
     const at = (x: number, y: number) => idle?.alpha[y * 376 + x]
 
-    expect(result.masks).toHaveLength(31)
+    expect(result.masks).toHaveLength(40)
     // The corner is see-through background; the middle of the body receives clicks.
     expect(at(0, 0)).toBe(0)
     expect(at(188, 200)).toBe(255)
