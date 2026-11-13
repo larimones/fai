@@ -13,7 +13,24 @@ const electron = vi.hoisted(() => {
       FakeTray.instances.push(this)
     }
   }
-  return { Tray: FakeTray }
+  class FakeNotification {
+    static instances: FakeNotification[] = []
+    readonly listeners = new Map<string, (...args: unknown[]) => void>()
+    readonly show = vi.fn()
+    readonly on = vi.fn((event: string, listener: (...args: unknown[]) => void) => {
+      this.listeners.set(event, listener)
+      return this
+    })
+
+    constructor(readonly options: { title: string; body: string }) {
+      FakeNotification.instances.push(this)
+    }
+
+    emit(event: string, ...args: unknown[]): void {
+      this.listeners.get(event)?.(...args)
+    }
+  }
+  return { Tray: FakeTray, Notification: FakeNotification, app: { setAppUserModelId: vi.fn() } }
 })
 
 vi.mock('electron', () => electron)
@@ -91,5 +108,71 @@ describe('setClickThrough (RF-05)', () => {
     integration.setClickThrough(window, false)
 
     expect(window.setIgnoreMouseEvents).not.toHaveBeenCalled()
+  })
+})
+
+describe('notifications (RF-15, ADR-0016)', () => {
+  beforeEach(() => {
+    electron.Notification.instances = []
+    electron.app.setAppUserModelId.mockClear()
+  })
+
+  const lastNotification = () => {
+    const notification = electron.Notification.instances.at(-1)
+    if (notification === undefined) {
+      throw new Error('no notification created')
+    }
+    return notification
+  }
+
+  it('on Windows, prepares the app id the installer will use', () => {
+    createDesktopIntegration('win32').prepareNotifications()
+
+    expect(electron.app.setAppUserModelId).toHaveBeenCalledExactlyOnceWith(
+      'io.github.larimones.fai',
+    )
+  })
+
+  it('on Linux, needs no preparation', () => {
+    createDesktopIntegration('linux').prepareNotifications()
+
+    expect(electron.app.setAppUserModelId).not.toHaveBeenCalled()
+  })
+
+  for (const platform of ['win32', 'linux'] as const) {
+    it(`on ${platform}, shows the title and text and calls back on click`, () => {
+      const onClick = vi.fn()
+
+      createDesktopIntegration(platform).notify({ title: 'Fai ✨', body: 'tomar água', onClick })
+      const notification = lastNotification()
+      notification.emit('click')
+
+      expect(notification.options).toEqual({ title: 'Fai ✨', body: 'tomar água' })
+      expect(notification.show).toHaveBeenCalledOnce()
+      expect(onClick).toHaveBeenCalledOnce()
+    })
+  }
+
+  it('keeps each notification alive until it closes, so its click still works', () => {
+    const integration = createDesktopIntegration('linux')
+
+    integration.notify({ title: 'Fai ✨', body: 'a', onClick: vi.fn() })
+    integration.notify({ title: 'Fai ✨', body: 'b', onClick: vi.fn() })
+    expect(integration.openNotifications()).toBe(2)
+
+    electron.Notification.instances[0]?.emit('close')
+    expect(integration.openNotifications()).toBe(1)
+  })
+
+  it('logs a notification that failed to show and lets it go', () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const integration = createDesktopIntegration('win32')
+
+    integration.notify({ title: 'Fai ✨', body: 'a', onClick: vi.fn() })
+    lastNotification().emit('failed', {}, 'toast falhou')
+
+    expect(error).toHaveBeenCalled()
+    expect(integration.openNotifications()).toBe(0)
+    error.mockRestore()
   })
 })
