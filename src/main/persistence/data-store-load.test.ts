@@ -20,6 +20,14 @@ function fsError(code: string): NodeJS.ErrnoException {
 }
 
 const V1_WITH_POSITION = { schemaVersion: 1, mascot: { position: { x: -800, y: 420 } } }
+const REMINDER = {
+  id: '8b3e4c6a-ad3f-4e5a-9b4c-3d4e5f6a7b82',
+  text: 'tomar água',
+  dueAt: '2026-11-13T18:30:00.000Z',
+  createdAt: '2026-11-13T17:00:00.000Z',
+  notifiedAt: null,
+  late: false,
+}
 const TASK = {
   id: '6f1c2a4e-8b1d-4c3e-9f2a-1b2c3d4e5f60',
   title: 'Regar as plantas',
@@ -82,9 +90,9 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
     expect(await readdir(dir)).toEqual([])
   })
 
-  it('round-trips a saved document with tasks exactly', async () => {
+  it('round-trips a saved document with tasks and reminders exactly', async () => {
     const data: FaiData = {
-      schemaVersion: 2,
+      schemaVersion: 3,
       mascot: { position: { x: -1280, y: 600 } },
       tasks: [
         TASK,
@@ -92,6 +100,15 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
           ...TASK,
           id: '7a2d3b5f-9c2e-4d4f-8a3b-2c3d4e5f6a71',
           completedAt: '2026-11-06T13:00:00.000Z',
+        },
+      ],
+      reminders: [
+        REMINDER,
+        {
+          ...REMINDER,
+          id: '9c4f5d7b-be4a-4f6b-8c5d-4e5f6a7b8c93',
+          notifiedAt: '2026-11-13T18:31:30.000Z',
+          late: true,
         },
       ],
     }
@@ -102,13 +119,46 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
     expect(await store().load()).toEqual({ status: 'loaded', data })
   })
 
-  it('migrates a v1 file to v2, keeping the mascot position (ADR-0015)', async () => {
+  it('migrates a v1 file to v3, keeping the mascot position (ADR-0015, ADR-0016)', async () => {
     await writeFile(filePath, JSON.stringify(V1_WITH_POSITION), 'utf8')
 
     expect(await store().load()).toEqual({
       status: 'migrated',
-      data: { schemaVersion: 2, mascot: { position: { x: -800, y: 420 } }, tasks: [] },
+      data: {
+        schemaVersion: 3,
+        mascot: { position: { x: -800, y: 420 } },
+        tasks: [],
+        reminders: [],
+      },
     })
+  })
+
+  it('migrates a v2 file to v3, keeping the position and the tasks (ADR-0016)', async () => {
+    const v2 = { schemaVersion: 2, mascot: { position: { x: 17, y: 852 } }, tasks: [TASK] }
+    await writeFile(filePath, JSON.stringify(v2), 'utf8')
+
+    expect(await store().load()).toEqual({
+      status: 'migrated',
+      data: { ...v2, schemaVersion: 3, reminders: [] },
+    })
+  })
+
+  it('checks a v2 file against the v2 schema before migrating it', async () => {
+    // Migrating would overwrite this "reminders" with [], so only the v2 check can catch it.
+    const v2 = {
+      schemaVersion: 2,
+      mascot: { position: null },
+      tasks: [],
+      reminders: [{ text: 'lixo' }],
+    }
+    await expectQuarantined(JSON.stringify(v2), 'INVALID_DOCUMENT')
+  })
+
+  it('quarantines a v3 file with a reminder the domain would never create', async () => {
+    await expectQuarantined(
+      JSON.stringify({ ...createEmptyData(), reminders: [{ ...REMINDER, dueAt: 'amanhã' }] }),
+      'INVALID_DOCUMENT',
+    )
   })
 
   it('checks a v1 file against the v1 schema before migrating it', async () => {
@@ -119,7 +169,7 @@ describe('createDataStore — loading (RNF-07 CA2, CA3; RF-17 CA2)', () => {
     )
   })
 
-  it('quarantines a v2 file with a task the domain would never create', async () => {
+  it('quarantines a file with a task the domain would never create', async () => {
     await expectQuarantined(
       JSON.stringify({ ...createEmptyData(), tasks: [{ ...TASK, title: '   ' }] }),
       'INVALID_DOCUMENT',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createEmptyData } from '@domain/data/fai-data'
-import { documentEnvelopeSchema, faiDataSchema, faiDataV1Schema } from './schema'
+import { documentEnvelopeSchema, faiDataSchema, faiDataV1Schema, faiDataV2Schema } from './schema'
 
 describe('documentEnvelopeSchema', () => {
   it('reads the version and keeps the remaining fields for migration', () => {
@@ -51,7 +51,7 @@ describe('faiDataV1Schema (RNF-07): validates a v1 file before migrating', () =>
   })
 })
 
-describe('faiDataSchema (v2, ADR-0015)', () => {
+describe('faiDataV2Schema (ADR-0015): validates a v2 file before migrating', () => {
   const task = {
     id: '6f1c2a4e-8b1d-4c3e-9f2a-1b2c3d4e5f60',
     title: 'Regar as plantas',
@@ -64,11 +64,10 @@ describe('faiDataSchema (v2, ADR-0015)', () => {
     tasks: [{ ...task, ...changes }],
   })
 
-  it('accepts the empty document and documents with pending and completed tasks', () => {
-    expect(faiDataSchema.parse(createEmptyData())).toEqual(createEmptyData())
-    expect(faiDataSchema.parse(withTask({}))).toEqual(withTask({}))
+  it('accepts documents with pending and completed tasks', () => {
+    expect(faiDataV2Schema.parse(withTask({}))).toEqual(withTask({}))
     const done = withTask({ completedAt: '2026-11-06T13:30:00.000Z' })
-    expect(faiDataSchema.parse(done)).toEqual(done)
+    expect(faiDataV2Schema.parse(done)).toEqual(done)
   })
 
   it('rejects tasks the domain would never create', () => {
@@ -83,15 +82,63 @@ describe('faiDataSchema (v2, ADR-0015)', () => {
       withTask({ completedAt: undefined }),
       withTask({ priority: 'alta' }),
     ]) {
+      expect(faiDataV2Schema.safeParse(document).success).toBe(false)
+    }
+  })
+
+  it('rejects the v1 shape, a missing task list and the v3 reminders', () => {
+    for (const document of [
+      { schemaVersion: 1, mascot: { position: null } },
+      { schemaVersion: 2, mascot: { position: null } },
+      { schemaVersion: 2, mascot: { position: null }, tasks: [], reminders: [] },
+    ]) {
+      expect(faiDataV2Schema.safeParse(document).success).toBe(false)
+    }
+  })
+})
+
+describe('faiDataSchema (v3, ADR-0016)', () => {
+  const reminder = {
+    id: '8b3e4c6a-ad3f-4e5a-9b4c-3d4e5f6a7b82',
+    text: 'tomar água',
+    dueAt: '2026-11-13T18:30:00.000Z',
+    createdAt: '2026-11-13T17:00:00.000Z',
+    notifiedAt: null,
+    late: false,
+  }
+  const withReminder = (changes: Record<string, unknown>) => ({
+    ...createEmptyData(),
+    reminders: [{ ...reminder, ...changes }],
+  })
+
+  it('accepts the empty document and pending and notified reminders', () => {
+    expect(faiDataSchema.parse(createEmptyData())).toEqual(createEmptyData())
+    expect(faiDataSchema.parse(withReminder({}))).toEqual(withReminder({}))
+    const notified = withReminder({ notifiedAt: '2026-11-13T18:32:00.000Z', late: true })
+    expect(faiDataSchema.parse(notified)).toEqual(notified)
+  })
+
+  it('rejects reminders the domain would never create', () => {
+    for (const document of [
+      withReminder({ text: '' }),
+      withReminder({ text: ' com espaços ' }),
+      withReminder({ text: 'a'.repeat(201) }),
+      withReminder({ id: 'x' }),
+      withReminder({ dueAt: 'amanhã' }),
+      withReminder({ createdAt: undefined }),
+      withReminder({ notifiedAt: 'agora' }),
+      withReminder({ late: 'não' }),
+      withReminder({ late: undefined }),
+      withReminder({ repeat: 'daily' }),
+    ]) {
       expect(faiDataSchema.safeParse(document).success).toBe(false)
     }
   })
 
-  it('rejects the v1 shape, a missing task list and extra fields', () => {
+  it('rejects older shapes and a missing reminder list', () => {
     for (const document of [
-      { schemaVersion: 1, mascot: { position: null } },
-      { schemaVersion: 2, mascot: { position: null } },
-      { ...createEmptyData(), reminders: [] },
+      { schemaVersion: 2, mascot: { position: null }, tasks: [] },
+      { schemaVersion: 3, mascot: { position: null }, tasks: [] },
     ]) {
       expect(faiDataSchema.safeParse(document).success).toBe(false)
     }

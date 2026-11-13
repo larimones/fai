@@ -3,7 +3,7 @@ import {
   CURRENT_SCHEMA_VERSION,
   createEmptyData,
   FAI_DATA_MIGRATIONS,
-  type FaiDataV2,
+  type FaiDataV3,
 } from './fai-data'
 import { migrateToCurrent, type MigrationTable, type VersionedDocument } from './migrations'
 
@@ -22,15 +22,16 @@ function deepFreeze<T>(value: T): T {
 }
 
 describe('createEmptyData', () => {
-  it('creates a current-version document without a mascot position or tasks', () => {
-    const data: FaiDataV2 = createEmptyData()
+  it('creates a current-version document without a mascot position, tasks or reminders', () => {
+    const data: FaiDataV3 = createEmptyData()
 
     expect(data).toEqual({
       schemaVersion: CURRENT_SCHEMA_VERSION,
       mascot: { position: null },
       tasks: [],
+      reminders: [],
     })
-    expect(CURRENT_SCHEMA_VERSION).toBe(2)
+    expect(CURRENT_SCHEMA_VERSION).toBe(3)
   })
 
   it('returns a fresh object on every call', () => {
@@ -38,13 +39,38 @@ describe('createEmptyData', () => {
   })
 })
 
-describe('FAI_DATA_MIGRATIONS (ADR-0015)', () => {
-  it('takes a v1 document to v2 with an empty task list, keeping the mascot position', () => {
+describe('FAI_DATA_MIGRATIONS (ADR-0015, ADR-0016)', () => {
+  it('takes a v1 document to v3 in two steps, keeping the mascot position', () => {
     const v1 = deepFreeze({ schemaVersion: 1, mascot: { position: { x: -800, y: 420 } } })
 
     expect(migrateToCurrent(v1, FAI_DATA_MIGRATIONS, CURRENT_SCHEMA_VERSION)).toEqual({
       ok: true,
-      document: { schemaVersion: 2, mascot: { position: { x: -800, y: 420 } }, tasks: [] },
+      document: {
+        schemaVersion: 3,
+        mascot: { position: { x: -800, y: 420 } },
+        tasks: [],
+        reminders: [],
+      },
+    })
+  })
+
+  it('takes a v2 document to v3 with an empty reminder list, keeping position and tasks', () => {
+    const task = {
+      id: 't',
+      title: 'Regar',
+      createdAt: '2026-11-06T12:00:00.000Z',
+      completedAt: null,
+    }
+    const v2 = deepFreeze({ schemaVersion: 2, mascot: { position: { x: 5, y: 6 } }, tasks: [task] })
+
+    expect(migrateToCurrent(v2, FAI_DATA_MIGRATIONS, CURRENT_SCHEMA_VERSION)).toEqual({
+      ok: true,
+      document: {
+        schemaVersion: 3,
+        mascot: { position: { x: 5, y: 6 } },
+        tasks: [task],
+        reminders: [],
+      },
     })
   })
 })
