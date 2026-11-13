@@ -1,7 +1,7 @@
 # Feature 06 — Lembretes e notificações
 
 - **Etapa:** 6 (Lembretes e notificações)
-- **Status:** especificada
+- **Status:** planejada
 - **Requisitos:** RF-14, RF-15, RF-16, RF-17, RNF-03, RNF-09, RNF-10
 
 ## Objetivo
@@ -10,7 +10,7 @@ As tarefas ajudam a lembrar o que fazer; falta lembrar **quando**. Com esta feat
 
 ## Escopo
 
-- **Painel com duas abas, "Tarefas" e "Lembretes"**, no mesmo tamanho de hoje. Pelo menu de contexto ou pela bandeja, o painel abre em "Tarefas"; ao clicar numa notificação, abre em "Lembretes".
+- **Painel com duas abas, "Tarefas" e "Lembretes"**, com o painel mais alto: 320×520 (decisão de 2026-11-13, ao ver a maquete). Pelo menu de contexto ou pela bandeja, o painel abre em "Tarefas"; ao clicar numa notificação, abre em "Lembretes".
 - **Criar lembrete:** texto (obrigatório, 1 a 200 caracteres, sem espaços nas pontas) e data e hora (obrigatória e no futuro). A hora sai de **atalhos** — "em 15 min", "em 1 h", "amanhã 9h" — ou de um **campo de data e hora** para qualquer outro horário.
 - **Lista de lembretes pendentes** ordenada pela data (o mais próximo primeiro); excluir com a mesma confirmação na linha usada nas tarefas.
 - **Avisados:** depois de avisar, o lembrete vai para a seção recolhida "Avisados (N)", de onde dá para excluí-lo; os que avisaram atrasados aparecem marcados como atrasados.
@@ -54,12 +54,8 @@ As tarefas ajudam a lembrar o que fazer; falta lembrar **quando**. Com esta feat
 - 2026-11-13: a Fai reage ao lembrete com a **piscada sorrindo repetida** (provisória).
 - 2026-11-13: lembretes perdidos: **até 3, um aviso para cada; acima de 3, um resumo**.
 - 2026-11-13: o painel abre em **"Tarefas"**; a notificação abre em **"Lembretes"**.
+- 2026-11-13: maquete da aba "Lembretes" **aprovada**; painel passa a **320×520**.
 
 ## Perguntas em aberto
 
-- Formato do lembrete no documento v3 (`id`, `text`, `dueAt`, `createdAt`, `notifiedAt`, `late`?), migração v2 → v3 e o que fica no domínio (regra de vencimento, seleção dos perdidos, resumo, atalhos com fuso local).
-- Agendador por _poll_ de 15 s + `resume` (ADR-0006): onde ele vive no main e como é testado com relógio falso.
-- Notificações atrás da `DesktopIntegration` (Windows e Linux), `AppUserModelID` em desenvolvimento no Windows e o que dá para conferir antes do instalador da Etapa 7.
-- Canais IPC novos (`reminders:*`, aviso de aba ao abrir o painel) e a reação `reminder` da mascote (o tipo `mascot:reaction` volta a ter mais de um valor).
-- Animação provisória da reação ao lembrete (a piscada 3 vezes) no script de arte, com quadros compartilhados.
-- Abas acessíveis (teclado, `role="tab"`), tamanho do painel com o formulário de lembrete (texto + atalhos + campo de data e hora).
+- Nenhuma. As técnicas foram respondidas no `plan.md` e no ADR-0016.
