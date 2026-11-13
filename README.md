@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 5 (painel de tarefas) verificada no Linux em 2026-11-13: com o clique direito na Fai (ou pela bandeja) abre-se um painel pastel ao lado dela para criar, concluir, reabrir e excluir tarefas, e ela comemora cada conclusão. Falta a verificação no Windows. Veja [specs/features/05-painel-de-tarefas/verification.md](specs/features/05-painel-de-tarefas/verification.md).
+> **Status:** Etapa 5 (painel de tarefas) concluída: com o clique direito na Fai (ou pela bandeja) abre-se um painel pastel ao lado dela para criar, concluir, reabrir e excluir tarefas, e ela comemora cada conclusão (a verificação no Windows ficou como pendência). Próxima: Etapa 6 (lembretes e notificações). Veja [specs/roadmap.md](specs/roadmap.md) e [specs/features/README.md](specs/features/README.md).
 
 ## Ferramentas necessárias
 

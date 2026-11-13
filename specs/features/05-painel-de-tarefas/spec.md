@@ -1,7 +1,7 @@
 # Feature 05 — Painel de tarefas
 
 - **Etapa:** 5 (Tarefas)
-- **Status:** em verificação
+- **Status:** concluída (2026-11-13, com a verificação no Windows aceita como pendência pela dona do projeto)
 - **Requisitos:** RF-10, RF-11, RF-12, RF-13, RF-17, RF-03 CA1 ("Abrir painel"), RNF-09, RNF-10
 
 ## Objetivo

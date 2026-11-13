@@ -77,7 +77,7 @@ Lembretes, notificações e clique na notificação (Etapa 6); editar título, r
 
 ### Pendências
 
-- **T5.12, Windows:** `npm run check`, `npm run build` e o roteiro "Etapa 5 — painel de tarefas" de `specs/manual-tests.md` (passos 1 a 15), acrescentando a seção do Windows em `verification.md`. Prioridade: passo 15 (menu de contexto a partir da Fai sem foco e foco do painel ao abrir) e memória com `node tools/measure/measure-fai.mjs --seconds 60` (no Linux subiu para ~150 MB com o painel escondido).
+- **T5.12, Windows (aceita como pendência em 2026-11-13; a feature foi fechada sem ela):** `npm run check`, `npm run build` e o roteiro "Etapa 5 — painel de tarefas" de `specs/manual-tests.md` (passos 1 a 15), acrescentando a seção do Windows em `verification.md`. Prioridade: passo 15 (menu de contexto a partir da Fai sem foco e foco do painel ao abrir) e memória com `node tools/measure/measure-fai.mjs --seconds 60` (no Linux subiu para ~150 MB com o painel escondido).
 
 - **Arte definitiva da comemoração (pedido da dona do projeto, 2026-11-12):** a comemoração provisória (asas rápidas + piscada) foi vista como "apenas bateu as asinhas rápido". Ela quer uma animação própria para comemorar; quando a arte chegar, é rodar o script de arte com os quadros novos (ADR-0013), sem mudar código.
 

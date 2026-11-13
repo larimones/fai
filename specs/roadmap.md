@@ -16,7 +16,7 @@ Cada etapa termina com: `npm run check` passando (saída real registrada), crit�
 
 - [x] A mascote é transparente, flutuante e arrastável. (Etapa 3, Windows e Linux)
 - [x] As animações e as reações a cliques funcionam. (Etapa 4; verificado no Linux, Windows aceito como pendência em 2026-11-06)
-- [ ] É possível criar, concluir e excluir tarefas.
+- [x] É possível criar, concluir e excluir tarefas. (Etapa 5; verificado no Linux, Windows aceito como pendência em 2026-11-13)
 - [ ] Os lembretes são persistidos e geram notificações locais.
 - [ ] Os dados sobrevivem ao reinício do aplicativo.
 - [ ] Os fluxos críticos têm testes automatizados.

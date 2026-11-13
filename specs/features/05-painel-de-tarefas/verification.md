@@ -66,3 +66,7 @@ Feito pela dona do projeto nesta máquina, em 2026-11-13: "Abrir painel" pela ba
 2. **Memória em repouso subiu de ~133 MB (Etapa 4) para ~150 MB** com a janela do painel criada e escondida desde o início (um renderer a mais). Continua abaixo dos 250 MB do RNF-08; no Linux o PSS (283 MB) segue acima, como já registrado na feature 04. Medir no Windows.
 3. **Preload da mascote cresceu de 1 kB para 163 kB:** agora valida eventos com o `eventContract` (zod embutido, como o do painel). Sem efeito visível; anotado como referência.
 4. Os demais defeitos achados durante a implementação (pedaço compartilhado entre os preloads, atraso de posição no X11, testes fracos revelados por mutação) já foram corrigidos e estão em "Verificações executadas" do `tasks.md`.
+
+## Fechamento
+
+2026-11-13: a dona do projeto aceitou fechar a feature com a verificação no Windows pendente. Um segundo `/spec:verify` no mesmo dia, nesta máquina e no mesmo código (`b60892a`, que só acrescentou este registro), não repetiu as verificações: os resultados acima continuam valendo, e a parte que faltava só pode ser executada no Windows. Fica aberto, sem bloquear a Etapa 6: o roteiro "Etapa 5 — painel de tarefas" de `specs/manual-tests.md` no Windows (prioridade: passo 15, menu de contexto a partir da Fai sem foco e foco do painel ao abrir) e a memória com `tools/measure/`.
