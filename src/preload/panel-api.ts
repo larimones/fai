@@ -34,8 +34,9 @@ export function createPanelApi(
     onOpened(listener) {
       // The Electron event never reaches the page, and an unexpected payload is dropped.
       const handler = (_event: unknown, payload?: unknown): void => {
-        if (eventContract[IpcChannels.panelOpened].safeParse(payload).success) {
-          listener()
+        const opened = eventContract[IpcChannels.panelOpened].safeParse(payload)
+        if (opened.success) {
+          listener(opened.data.tab)
         }
       }
       ipc.on(IpcChannels.panelOpened, handler)

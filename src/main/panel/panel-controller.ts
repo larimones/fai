@@ -1,6 +1,7 @@
 import type { ScreenPoint } from '@domain/data/fai-data'
 import type { Rectangle, Size } from '@domain/mascot/geometry'
 import { placePanel } from '@domain/panel/placement'
+import type { PanelOpened } from '@shared/ipc/api'
 import { IpcChannels } from '@shared/ipc/channels'
 
 /** The parts of the panel's BrowserWindow the controller uses. */
@@ -19,7 +20,7 @@ export interface PanelWindowPort {
         input: { readonly type: string; readonly key: string },
       ) => void,
     ): unknown
-    send(channel: string): void
+    send(channel: string, payload: unknown): void
   }
 }
 
@@ -67,7 +68,7 @@ export function createPanelController(options: PanelControllerOptions): PanelCon
         window.show()
       }
       window.focus()
-      window.webContents.send(IpcChannels.panelOpened)
+      window.webContents.send(IpcChannels.panelOpened, { tab: 'tasks' } satisfies PanelOpened)
     },
 
     follow(position) {

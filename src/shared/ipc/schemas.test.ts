@@ -36,15 +36,70 @@ describe('mascot menu and reaction messages (ADR-0014)', () => {
     expect(openMenu.safeParse({ x: 10 }).success).toBe(false)
   })
 
-  it('only knows the celebrate reaction, and the panel opened event has no payload', () => {
+  it('knows the celebrate and reminder reactions, and the panel opens on a known tab', () => {
     const reaction = eventContract[IpcChannels.mascotReaction]
     const opened = eventContract[IpcChannels.panelOpened]
 
     expect(reaction.safeParse({ kind: 'celebrate' }).success).toBe(true)
+    expect(reaction.safeParse({ kind: 'reminder' }).success).toBe(true)
     expect(reaction.safeParse({ kind: 'dance' }).success).toBe(false)
     expect(reaction.safeParse({ kind: 'celebrate', extra: 1 }).success).toBe(false)
-    expect(opened.safeParse(undefined).success).toBe(true)
-    expect(opened.safeParse({}).success).toBe(false)
+    expect(opened.safeParse({ tab: 'tasks' }).success).toBe(true)
+    expect(opened.safeParse({ tab: 'reminders' }).success).toBe(true)
+    expect(opened.safeParse({ tab: 'settings' }).success).toBe(false)
+    expect(opened.safeParse(undefined).success).toBe(false)
+  })
+})
+
+describe('reminder channels (CA14, ADR-0016)', () => {
+  const ID = '8b3e4c6a-ad3f-4e5a-9b4c-3d4e5f6a7b82'
+  const reminder = {
+    id: ID,
+    text: 'tomar água',
+    dueAt: '2026-11-13T18:30:00.000Z',
+    createdAt: '2026-11-13T17:00:00.000Z',
+    notifiedAt: null,
+    late: false,
+  }
+  const list = invokeContract[IpcChannels.remindersList]
+  const create = invokeContract[IpcChannels.remindersCreate]
+  const remove = invokeContract[IpcChannels.remindersDelete]
+  const changed = eventContract[IpcChannels.remindersChanged]
+
+  it('accepts the declared requests and responses', () => {
+    expect(list.request.safeParse(undefined).success).toBe(true)
+    expect(create.request.safeParse({ text: ' tomar água ', dueAt: reminder.dueAt }).success).toBe(
+      true,
+    )
+    // The text rule and "in the future" are the domain's; the contract checks the shape.
+    expect(create.request.safeParse({ text: '', dueAt: '2000-01-01T00:00:00.000Z' }).success).toBe(
+      true,
+    )
+    expect(remove.request.safeParse({ id: ID }).success).toBe(true)
+    expect(
+      list.response.safeParse([reminder, { ...reminder, notifiedAt: reminder.dueAt, late: true }])
+        .success,
+    ).toBe(true)
+    expect(create.response.safeParse(reminder).success).toBe(true)
+    expect(remove.response.safeParse(null).success).toBe(true)
+    expect(changed.safeParse(undefined).success).toBe(true)
+  })
+
+  it('rejects extra fields, wrong types, oversized texts, bad instants and bad ids', () => {
+    for (const [schema, payload] of [
+      [create.request, { text: 'x'.repeat(1001), dueAt: reminder.dueAt }],
+      [create.request, { text: 'ok', dueAt: 'amanhã às 9' }],
+      [create.request, { text: 'ok', dueAt: '2026-11-13T18:30' }],
+      [create.request, { text: 'ok' }],
+      [create.request, { text: 'ok', dueAt: reminder.dueAt, repeat: true }],
+      [remove.request, { id: 'not-a-uuid' }],
+      [list.request, { all: true }],
+      [create.response, { ...reminder, late: 'no' }],
+      [create.response, { ...reminder, secret: 1 }],
+      [changed, { count: 1 }],
+    ] as const) {
+      expect(schema.safeParse(payload).success).toBe(false)
+    }
   })
 })
 

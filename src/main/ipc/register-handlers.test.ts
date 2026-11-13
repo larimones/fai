@@ -5,6 +5,7 @@ import type { SenderGuard } from './invoke-handler'
 import {
   registerAppHandlers,
   registerMascotHandlers,
+  registerReminderHandlers,
   registerTaskHandlers,
 } from './register-handlers'
 
@@ -148,5 +149,41 @@ describe('IPC registration (RNF-03, CA16)', () => {
     for (const window of ['mascot', 'panel'] as const) {
       await expect(invoke(window, IpcChannels.appGetInfo)).resolves.toMatchObject({ ok: true })
     }
+  })
+
+  it('routes reminder requests from the panel and refuses them from the mascot (ADR-0016)', async () => {
+    const ipc = fakeIpcMain()
+    const reminder = {
+      id: ID,
+      text: 'tomar água',
+      dueAt: '2026-11-13T18:30:00.000Z',
+      createdAt: '2026-11-13T17:00:00.000Z',
+      notifiedAt: null,
+      late: false,
+    }
+    const reminders = {
+      list: vi.fn(() => [reminder]),
+      create: vi.fn(() => reminder),
+      delete: vi.fn(),
+    }
+    registerReminderHandlers(ipc.ipcMain, only('panel'), reminders)
+
+    await expect(ipc.invoke('panel', IpcChannels.remindersList)).resolves.toEqual({
+      ok: true,
+      value: [reminder],
+    })
+    await ipc.invoke('panel', IpcChannels.remindersCreate, {
+      text: 'tomar água',
+      dueAt: reminder.dueAt,
+    })
+    await ipc.invoke('panel', IpcChannels.remindersDelete, { id: ID })
+    await expect(ipc.invoke('mascot', IpcChannels.remindersList)).resolves.toMatchObject({
+      ok: false,
+      error: { code: 'UNTRUSTED_SENDER' },
+    })
+
+    expect(reminders.create).toHaveBeenCalledExactlyOnceWith('tomar água', reminder.dueAt)
+    expect(reminders.delete).toHaveBeenCalledExactlyOnceWith(ID)
+    expect(reminders.list).toHaveBeenCalledOnce()
   })
 })

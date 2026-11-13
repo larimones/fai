@@ -13,7 +13,7 @@ const fail = <T,>(code: 'INVALID_TITLE' | 'NOT_FOUND', message: string): Promise
 /** A fake main process: keeps the tasks and applies the same refusals. */
 function installFakePanel(initial: Task[] = []) {
   let tasks = [...initial]
-  let openedListener: (() => void) | undefined
+  let openedListener: ((tab: 'tasks' | 'reminders') => void) | undefined
   let clock = 0
   const now = () => new Date(Date.UTC(2026, 10, 12, 12, 0, clock++)).toISOString()
   const spies = {
@@ -57,7 +57,7 @@ function installFakePanel(initial: Task[] = []) {
     spies,
     open: async () => {
       await act(async () => {
-        openedListener?.()
+        openedListener?.('tasks')
         await Promise.resolve()
       })
     },

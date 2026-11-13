@@ -7,8 +7,12 @@ export type IpcErrorCode =
   | 'INTERNAL'
   /** The task title broke the rule (RF-11 CA1); the message says how. */
   | 'INVALID_TITLE'
-  /** The task no longer exists (RF-13 CA2). */
+  /** The task or reminder no longer exists (RF-13 CA2). */
   | 'NOT_FOUND'
+  /** The reminder text broke the rule (RF-14 CA1). */
+  | 'INVALID_TEXT'
+  /** The reminder time is not in the future (RF-14 CA1). */
+  | 'DUE_NOT_IN_FUTURE'
 
 export interface IpcError {
   readonly code: IpcErrorCode
@@ -33,7 +37,25 @@ export interface DragMessage {
 
 /** What makes Fai react, sent by the main process (RF-12 CA2). */
 export interface MascotReaction {
-  readonly kind: 'celebrate'
+  readonly kind: 'celebrate' | 'reminder'
+}
+
+/** The panel tabs (ADR-0016). */
+export type PanelTab = 'tasks' | 'reminders'
+
+/** Sent when the panel opens: which tab to show. */
+export interface PanelOpened {
+  readonly tab: PanelTab
+}
+
+export interface CreateReminderRequest {
+  readonly text: string
+  /** ISO 8601 instant. */
+  readonly dueAt: string
+}
+
+export interface DeleteReminderRequest {
+  readonly id: string
 }
 
 export interface CreateTaskRequest {
@@ -73,5 +95,5 @@ export interface PanelApi {
     delete(id: string): Promise<IpcResult<null>>
   }
   /** Calls `listener` each time the panel is opened; returns a function that stops listening. */
-  onOpened(listener: () => void): () => void
+  onOpened(listener: (tab: PanelTab) => void): () => void
 }

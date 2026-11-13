@@ -1,11 +1,15 @@
 import { z } from 'zod'
 import type { AppInfo } from '@domain/app-info'
+import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type {
+  CreateReminderRequest,
   CreateTaskRequest,
+  DeleteReminderRequest,
   DeleteTaskRequest,
   DragMessage,
   MascotReaction,
+  PanelOpened,
   SetInteractiveMessage,
   SetTaskDoneRequest,
 } from './api'
@@ -33,6 +37,16 @@ export const taskSchema = z.strictObject({
   completedAt: z.iso.datetime().nullable(),
 }) satisfies z.ZodType<Task>
 
+/** A reminder as the main process returns it (shape only; the text rule lives in the domain). */
+export const reminderSchema = z.strictObject({
+  id: z.uuid(),
+  text: z.string().min(1),
+  dueAt: z.iso.datetime(),
+  createdAt: z.iso.datetime(),
+  notifiedAt: z.iso.datetime().nullable(),
+  late: z.boolean(),
+}) satisfies z.ZodType<Reminder>
+
 /** Caps what the renderer can send; the domain then applies the real title rule. */
 const MAX_TITLE_PAYLOAD = 1000
 
@@ -58,6 +72,18 @@ export const invokeContract = {
     request: z.strictObject({ id: z.uuid() }),
     response: z.null(),
   } satisfies InvokeDefinition<DeleteTaskRequest, null>,
+  [IpcChannels.remindersList]: {
+    request: z.undefined(),
+    response: z.array(reminderSchema),
+  } satisfies InvokeDefinition<undefined, readonly Reminder[]>,
+  [IpcChannels.remindersCreate]: {
+    request: z.strictObject({ text: z.string().max(MAX_TITLE_PAYLOAD), dueAt: z.iso.datetime() }),
+    response: reminderSchema,
+  } satisfies InvokeDefinition<CreateReminderRequest, Reminder>,
+  [IpcChannels.remindersDelete]: {
+    request: z.strictObject({ id: z.uuid() }),
+    response: z.null(),
+  } satisfies InvokeDefinition<DeleteReminderRequest, null>,
 }
 
 /** Payload schemas for each `send` channel (renderer → main, no reply), validated in the main process. */
@@ -74,7 +100,10 @@ export const sendContract = {
 /** Payload schemas for each event the main process sends to a window; the preload checks them. */
 export const eventContract = {
   [IpcChannels.mascotReaction]: z.strictObject({
-    kind: z.literal('celebrate'),
+    kind: z.enum(['celebrate', 'reminder']),
   }) satisfies z.ZodType<MascotReaction>,
-  [IpcChannels.panelOpened]: z.undefined(),
+  [IpcChannels.panelOpened]: z.strictObject({
+    tab: z.enum(['tasks', 'reminders']),
+  }) satisfies z.ZodType<PanelOpened>,
+  [IpcChannels.remindersChanged]: z.undefined(),
 }

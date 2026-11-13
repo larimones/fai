@@ -57,10 +57,10 @@ describe('panel window preload (RNF-03, ADR-0014)', () => {
 
     const stop = api.onOpened(listener)
     const [channel, handler] = electron.ipcRenderer.on.mock.calls[0] as [string, Handler]
-    handler({ sender: 'secret' })
+    handler({ sender: 'secret' }, { tab: 'reminders' })
 
     expect(channel).toBe('panel:opened')
-    expect(listener).toHaveBeenCalledExactlyOnceWith()
+    expect(listener).toHaveBeenCalledExactlyOnceWith('reminders')
 
     stop()
     expect(electron.ipcRenderer.removeListener).toHaveBeenCalledExactlyOnceWith(

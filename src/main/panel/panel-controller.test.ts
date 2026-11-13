@@ -71,7 +71,9 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
     )
     expect(window.show).toHaveBeenCalledOnce()
     expect(window.focus).toHaveBeenCalledOnce()
-    expect(window.webContents.send).toHaveBeenCalledExactlyOnceWith(IpcChannels.panelOpened)
+    expect(window.webContents.send).toHaveBeenCalledExactlyOnceWith(IpcChannels.panelOpened, {
+      tab: 'tasks',
+    })
     expect(window.setPosition.mock.invocationCallOrder[0]).toBeLessThan(
       window.show.mock.invocationCallOrder[0] ?? 0,
     )

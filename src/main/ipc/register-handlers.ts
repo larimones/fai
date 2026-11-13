@@ -1,5 +1,6 @@
 import type { IpcMain } from 'electron'
 import type { AppInfo } from '@domain/app-info'
+import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type { DragPhase } from '@shared/ipc/api'
 import { IpcChannels } from '@shared/ipc/channels'
@@ -79,6 +80,38 @@ export function registerTaskHandlers(ipcMain: Ipc, guard: SenderGuard, tasks: Ta
     IpcChannels.tasksDelete,
     createInvokeHandler(invokeContract[IpcChannels.tasksDelete], guard, ({ id }) => {
       tasks.delete(id)
+      return null
+    }),
+  )
+}
+
+/** What the panel can do with reminders; rule refusals are thrown as `IpcRuleError` (ADR-0016). */
+export interface ReminderIpc {
+  readonly list: () => readonly Reminder[]
+  readonly create: (text: string, dueAt: string) => Reminder
+  readonly delete: (id: string) => void
+}
+
+/** The panel window's reminder channels; `guard` should accept only the panel window. */
+export function registerReminderHandlers(
+  ipcMain: Ipc,
+  guard: SenderGuard,
+  reminders: ReminderIpc,
+): void {
+  ipcMain.handle(
+    IpcChannels.remindersList,
+    createInvokeHandler(invokeContract[IpcChannels.remindersList], guard, () => reminders.list()),
+  )
+  ipcMain.handle(
+    IpcChannels.remindersCreate,
+    createInvokeHandler(invokeContract[IpcChannels.remindersCreate], guard, ({ text, dueAt }) =>
+      reminders.create(text, dueAt),
+    ),
+  )
+  ipcMain.handle(
+    IpcChannels.remindersDelete,
+    createInvokeHandler(invokeContract[IpcChannels.remindersDelete], guard, ({ id }) => {
+      reminders.delete(id)
       return null
     }),
   )

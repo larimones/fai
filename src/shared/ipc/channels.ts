@@ -12,6 +12,11 @@ export const IpcChannels = {
   tasksCreate: 'tasks:create',
   tasksSetDone: 'tasks:set-done',
   tasksDelete: 'tasks:delete',
+  remindersList: 'reminders:list',
+  remindersCreate: 'reminders:create',
+  remindersDelete: 'reminders:delete',
+  /** Main → panel window: reminders were announced, reload the tab. */
+  remindersChanged: 'reminders:changed',
 } as const
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels]
