@@ -90,7 +90,7 @@ Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o c
 
 ### RF-16 — Lembretes perdidos (Etapa 6)
 
-- CA1 [auto] Ao iniciar ou ao voltar da suspensão, lembretes vencidos e não notificados são notificados uma única vez, marcados como atrasados.
+- CA1 [auto] Ao iniciar ou ao voltar da suspensão, lembretes vencidos e não notificados são notificados uma única vez, marcados como atrasados. Com mais de 3 de uma vez, o aviso é um resumo único, e cada um continua contando como avisado uma vez (decisão de 2026-11-13, feature 06).
 
 ### RF-17 — Dados sobrevivem ao reinício (Etapas 2, 5 e 6)
 
