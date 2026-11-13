@@ -2,6 +2,10 @@ import { resolve } from 'node:path'
 import react from '@vitejs/plugin-react'
 import { defineConfig } from 'vitest/config'
 
+// A fixed time zone for the local-time rules (reminder quick times and labels, ADR-0016):
+// UTC-3 without daylight saving. Test workers inherit it from this process.
+process.env['TZ'] = 'America/Sao_Paulo'
+
 export default defineConfig({
   resolve: {
     alias: {
