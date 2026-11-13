@@ -1,3 +1,5 @@
+import { SHORT_TEXT_MAX_LENGTH, validateShortText } from '../text'
+
 /** A to-do item (ADR-0015). Times are ISO 8601 instants in UTC. */
 export interface Task {
   readonly id: string
@@ -8,7 +10,7 @@ export interface Task {
 }
 
 /** Longest title, in characters (code points: an emoji counts as one) (RF-11 CA1). */
-export const TITLE_MAX_LENGTH = 200
+export const TITLE_MAX_LENGTH = SHORT_TEXT_MAX_LENGTH
 
 export type InvalidTitle = {
   readonly ok: false
@@ -28,15 +30,10 @@ export type TaskChange =
 export type TaskRemoval = { readonly ok: true; readonly tasks: readonly Task[] } | NotFound
 
 export function validateTitle(raw: string): TitleResult {
-  const title = raw.trim()
-  if (title === '') {
-    return { ok: false, code: 'INVALID_TITLE', reason: 'EMPTY' }
-  }
-  // Array.from splits by code point, so an emoji counts as one character.
-  if (Array.from(title).length > TITLE_MAX_LENGTH) {
-    return { ok: false, code: 'INVALID_TITLE', reason: 'TOO_LONG' }
-  }
-  return { ok: true, title }
+  const result = validateShortText(raw)
+  return result.ok
+    ? { ok: true, title: result.text }
+    : { ok: false, code: 'INVALID_TITLE', reason: result.reason }
 }
 
 /** Adds a pending task; the id and the time come from the caller. */
