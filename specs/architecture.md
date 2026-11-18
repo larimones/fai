@@ -155,7 +155,7 @@ Métodos atuais: `createTray({ icon, tooltip, menu, onActivate })` (Etapa 2) e `
 - CSP estrita em produção, entregue por `<meta>` gerado no build a partir de `src/main/security/csp.ts` (cabeçalhos não existem em `file://`).
 - Sem `remote`, sem `shell.openExternal` com entrada do renderer.
 - Rede só no main e só para a conversa (Etapa 8, ADR-0017): o SDK `@anthropic-ai/sdk` só pode ser importado em `main/chat/claude-chat.ts` (lint e `tests/architecture/ai-sdk-boundary.test.ts`); o cliente recebe a chave, o endereço oficial e `logLevel: 'off'` explicitamente, sem nada do ambiente; a CSP das janelas não muda.
-- Etapa 7: Electron Fuses e assinatura (se houver certificado) no empacotamento.
+- Empacotamento (Etapa 7, ADR-0018): Electron Fuses desligam `ELECTRON_RUN_AS_NODE`, `NODE_OPTIONS` e `--inspect`, exigem o `app.asar` íntegro e só ele, e cifram os cookies; `GrantFileProtocolExtraPrivileges` fica ligada porque as páginas vêm de `file://`. O pacote só leva `out/` e os ícones (conferido por `npm run pack:check`). Sem assinatura de código por enquanto.
 
 ## Testes
 
@@ -212,3 +212,12 @@ Implementada conforme o ADR-0017 (promovida do backlog; vem antes da Etapa 7 por
 - **SO**: `DesktopIntegration.secretStorage()` (assíncrono). Só a API assíncrona do `safeStorage`: no Linux, o que `encryptString` grava não decifra na execução seguinte.
 - **Preload**: `preload/chat.ts` expõe `window.faiChat` (`send`, `saveKey`, `onOpened`, `onPlaced`, `onReplyDelta`, `onReplyEnd`, `onReplyError`); nada devolve a chave.
 - **Renderer**: terceira página, `chat.html`. `chat/ChatApp.tsx` com um `useReducer` (`chat-state.ts`), `MessageList.tsx` (rolagem, `aria-live`), `ChatForm.tsx` e `KeyForm.tsx` (campo de senha). A ponta é posicionada por uma variável CSS definida pelo CSSOM, sem atributo `style`. Estilo em `chat.css`, com as cores no `:root`; `tests/ui/chat-contrast.test.ts` mede cada par. A Fai pisca uma vez a cada resposta.
+
+## Empacotamento (Etapa 7)
+
+Implementado conforme o ADR-0018:
+
+- **Build**: o electron-vite empacota também as dependências do main (`externalizeDeps: false`); todas as bibliotecas do app ficam em `devDependencies`, e o `out/` não depende de `node_modules`.
+- **Instalador**: `electron-builder.ts` (lido pelo electron-builder 26.18.1): NSIS x64 por usuário, sem administrador, em pt-BR, atalhos "Fai" no Menu Iniciar (com o `appId` = `APP_USER_MODEL_ID` do ADR-0016) e na área de trabalho, abre a Fai ao terminar, mantém `%APPDATA%\Fai` ao desinstalar. `npm run dist:win` gera `dist/Fai-Setup-<versão>.exe`, só no Windows.
+- **Fuses**: lista única em `tools/package/fuses.json`, usada pela configuração e pela conferência.
+- **Conferência**: `npm run pack:check` monta o app sem instalador (`dist/win-unpacked` ou `dist/linux-unpacked`) e roda `tools/package/check-package.mjs`, que lê as Fuses do executável (`@electron/fuses`) e lista o `app.asar` (`@electron/asar`); as regras ficam em `tools/package/package-rules.mjs`, testadas em `tests/build/`.

@@ -71,6 +71,28 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
 | `npm run format` / `format:check` | Formata / confere a formatação com Prettier                               |
 | `npm test` / `test:watch`         | Testes (Vitest), execução única / modo observação                         |
 | `npm run check`                   | typecheck + lint + format:check + testes, para rodar antes de cada commit |
+| `npm run dist:win`                | **No Windows:** gera o instalador `dist/Fai-Setup-<versão>.exe`           |
+| `npm run pack:check`              | Monta o app sem instalador e confere as proteções (Fuses) e o conteúdo    |
+
+## Instalar no Windows
+
+O instalador é gerado no próprio Windows (o último passo dele não roda no Linux sem o wine):
+
+1. Com o projeto preparado (veja acima), rode `npm run dist:win`. O instalador sai em `dist\Fai-Setup-1.0.0.exe` (cerca de 120 MB, quase tudo é o Electron).
+2. Abra o instalador. Como ele não tem assinatura de código, o Windows pode mostrar **"O Windows protegeu o computador"**: clique em **"Mais informações"** e depois em **"Executar assim mesmo"**. Faça isso só com um instalador que você mesma gerou.
+3. O assistente instala só para a sua conta, sem pedir senha de administrador, em `%LOCALAPPDATA%\Programs\Fai`. Ele cria o atalho **Fai** no Menu Iniciar e na área de trabalho, e abre a Fai ao terminar.
+4. As notificações dos lembretes aparecem com o nome e a estrela da Fai (é o atalho do Menu Iniciar que ensina isso ao Windows).
+
+**Desinstalar:** Configurações → Aplicativos → Aplicativos instalados → Fai → Desinstalar (se a Fai estiver aberta, o desinstalador a fecha). **Seus dados ficam:** tarefas, lembretes, posição e a chave da IA continuam em `%APPDATA%\Fai` e voltam se você instalar de novo. Para apagar tudo, apague essa pasta depois de desinstalar.
+
+### Limitações
+
+- Só Windows tem instalador; no Linux a Fai roda pelo `npm run dev`/`npm run preview` (macOS não é suportado).
+- Sem assinatura de código: o aviso do SmartScreen aparece na primeira vez, e algum antivírus pode desconfiar do arquivo.
+- Sem atualização automática: para uma versão nova, gere e rode o instalador de novo (os dados ficam).
+- A Fai não inicia sozinha com o Windows; abra pelo atalho.
+- A conversa precisa de internet e de uma chave do serviço de IA (com custo por mensagem); o resto funciona sem rede.
+- No Linux, os cliques não atravessam as áreas vazias em volta da Fai (ADR-0004).
 
 ## Usando a Fai (por enquanto)
 
