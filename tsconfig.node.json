@@ -8,6 +8,7 @@
     "electron.vite.config.mts",
     "vitest.config.mts",
     "electron-builder.ts",
+    "tools/**/*.d.mts",
     "src/main/**/*",
     "src/preload/**/*",
     "src/shared/**/*",
