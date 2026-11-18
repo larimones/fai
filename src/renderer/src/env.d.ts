@@ -1,4 +1,4 @@
-import type { FaiApi, PanelApi } from '@shared/ipc/api'
+import type { ChatApi, FaiApi, PanelApi } from '@shared/ipc/api'
 
 declare global {
   interface Window {
@@ -6,5 +6,7 @@ declare global {
     readonly fai: FaiApi
     /** Only on the panel page (`preload/panel.ts`, ADR-0014). */
     readonly faiPanel: PanelApi
+    /** Only on the chat bubble page (`preload/chat.ts`, ADR-0017). */
+    readonly faiChat: ChatApi
   }
 }

@@ -7,25 +7,43 @@ function clickItem(item: MenuItemConstructorOptions | undefined): void {
   click?.()
 }
 
-describe('buildTrayMenu (RF-03)', () => {
-  const actions = { toggleFai: vi.fn(), openPanel: vi.fn(), quit: vi.fn() }
+describe('buildTrayMenu (RF-03, RF-18 CA1, RF-19 CA1)', () => {
+  const actions = {
+    toggleFai: vi.fn(),
+    openPanel: vi.fn(),
+    openChat: vi.fn(),
+    changeKey: vi.fn(),
+    clearKey: vi.fn(),
+    quit: vi.fn(),
+  }
   const menu = buildTrayMenu(actions)
   const items = menu.filter((item) => item.type !== 'separator')
 
-  it('offers the three items in Brazilian Portuguese (RF-03 CA1)', () => {
-    expect(items.map((item) => item.label)).toEqual(['Mostrar/ocultar Fai', 'Abrir painel', 'Sair'])
+  it('offers the items in Brazilian Portuguese (RF-03 CA1)', () => {
+    expect(items.map((item) => item.label)).toEqual([
+      'Mostrar/ocultar Fai',
+      'Abrir painel',
+      'Conversar',
+      'Trocar chave da IA…',
+      'Apagar chave da IA',
+      'Sair',
+    ])
   })
 
-  it('wires each item to its action', () => {
-    clickItem(items[0])
-    expect(actions.toggleFai).toHaveBeenCalledOnce()
-    expect(actions.quit).not.toHaveBeenCalled()
-
-    clickItem(items[1])
-    expect(actions.openPanel).toHaveBeenCalledOnce()
-    expect(actions.quit).not.toHaveBeenCalled()
-
-    clickItem(items[2])
-    expect(actions.quit).toHaveBeenCalledOnce()
+  it('wires each item to its own action', () => {
+    const order = [
+      actions.toggleFai,
+      actions.openPanel,
+      actions.openChat,
+      actions.changeKey,
+      actions.clearKey,
+      actions.quit,
+    ]
+    items.forEach((item, index) => {
+      clickItem(item)
+      order.forEach((action, other) => {
+        expect(action).toHaveBeenCalledTimes(other <= index ? 1 : 0)
+      })
+    })
   })
 })

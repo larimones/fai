@@ -90,9 +90,11 @@ export function Mascot({ sheet, label }: MascotProps) {
       tick()
     }
     document.addEventListener('visibilitychange', onVisibilityChange)
-    // A completed task makes Fai celebrate (RF-12 CA2); a reminder makes her blink (ADR-0016).
+    // A completed task makes Fai celebrate (RF-12 CA2); a reminder makes her blink three times
+    // (ADR-0016); a chat reply, once, like a click (ADR-0017).
+    const events = { celebrate: 'celebrate', reminder: 'remind', reply: 'click' } as const
     const stopReactions = window.fai.mascot.onReaction((reaction) => {
-      const event = reaction.kind === 'reminder' ? 'remind' : 'celebrate'
+      const event = events[reaction.kind]
       animation = handleAnimationEvent(animation, event, Date.now())
       tick()
     })

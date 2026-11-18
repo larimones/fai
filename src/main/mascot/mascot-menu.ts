@@ -2,9 +2,13 @@ import type { MenuItemConstructorOptions } from 'electron'
 
 export interface MascotMenuActions {
   readonly openPanel: () => void
+  readonly openChat: () => void
 }
 
-/** Fai's right-click menu (RF-10 CA1); for now only "Abrir painel" (owner's decision, 2026-11-06). */
+/** Fai's right-click menu (RF-10 CA1, RF-18 CA1). */
 export function buildMascotMenu(actions: MascotMenuActions): MenuItemConstructorOptions[] {
-  return [{ label: 'Abrir painel', click: actions.openPanel }]
+  return [
+    { label: 'Abrir painel', click: actions.openPanel },
+    { label: 'Conversar', click: actions.openChat },
+  ]
 }

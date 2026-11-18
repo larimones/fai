@@ -116,3 +116,28 @@ export function registerReminderHandlers(
     }),
   )
 }
+
+/** What the chat bubble can ask (ADR-0017); rule refusals are thrown as `IpcRuleError`. */
+export interface ChatIpc {
+  /** Resolves when the reply (or its failure) has reached the bubble. */
+  readonly send: (text: string) => Promise<void>
+  readonly saveKey: (key: string) => Promise<void>
+}
+
+/** The chat bubble's channels; `guard` should accept only the chat bubble window. */
+export function registerChatHandlers(ipcMain: Ipc, guard: SenderGuard, chat: ChatIpc): void {
+  ipcMain.handle(
+    IpcChannels.chatSend,
+    createInvokeHandler(invokeContract[IpcChannels.chatSend], guard, async ({ text }) => {
+      await chat.send(text)
+      return null
+    }),
+  )
+  ipcMain.handle(
+    IpcChannels.chatSaveKey,
+    createInvokeHandler(invokeContract[IpcChannels.chatSaveKey], guard, async ({ key }) => {
+      await chat.saveKey(key)
+      return null
+    }),
+  )
+}

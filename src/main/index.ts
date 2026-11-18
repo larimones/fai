@@ -15,10 +15,15 @@ import {
 } from 'electron'
 import type { FaiData } from '@domain/data/fai-data'
 import { MASCOT_WINDOW_SIZE } from '@domain/mascot/dimensions'
-import type { MascotReaction } from '@shared/ipc/api'
+import type { ChatReplyError, MascotReaction } from '@shared/ipc/api'
 import { IpcChannels } from '@shared/ipc/channels'
+import { createApiKeyStore } from './chat/api-key-store'
+import { createChatController } from './chat/chat-controller'
+import { createChatService } from './chat/chat-service'
+import { createClaudeChat } from './chat/claude-chat'
 import {
   registerAppHandlers,
+  registerChatHandlers,
   registerMascotHandlers,
   registerReminderHandlers,
   registerTaskHandlers,
@@ -37,6 +42,7 @@ import { createReminderService } from './reminders/reminder-service'
 import { createReminderScheduler } from './reminders/scheduler'
 import { createTaskService } from './tasks/task-service'
 import { buildTrayMenu } from './tray/tray-menu'
+import { CHAT_SIZE, createChatWindow } from './windows/chat-window'
 import { createMascotWindow } from './windows/mascot-window'
 import { createPanelWindow, PANEL_SIZE } from './windows/panel-window'
 import { revealWindow, toggleWindow } from './windows/reveal-window'
@@ -62,7 +68,11 @@ function startApp(): void {
     isDevelopment && devServerUrl !== undefined
       ? new URL('panel.html', devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`).href
       : pathToFileURL(join(__dirname, '..', 'renderer', 'panel.html')).href
-  const isAppUrl = createAppUrlMatcher([rendererEntryUrl, panelEntryUrl])
+  const chatEntryUrl =
+    isDevelopment && devServerUrl !== undefined
+      ? new URL('chat.html', devServerUrl.endsWith('/') ? devServerUrl : `${devServerUrl}/`).href
+      : pathToFileURL(join(__dirname, '..', 'renderer', 'chat.html')).href
+  const isAppUrl = createAppUrlMatcher([rendererEntryUrl, panelEntryUrl, chatEntryUrl])
   let mascotWindow: BrowserWindow | undefined
   // Kept for the whole run: a garbage-collected Tray disappears from the system tray.
   let tray: Tray | undefined
@@ -116,6 +126,33 @@ function startApp(): void {
     })
     mascotWindow = window
     const panelWindow = createPanelWindow(panelEntryUrl, { devTools: isDevelopment })
+    const chatWindow = createChatWindow(chatEntryUrl, { devTools: isDevelopment })
+    // The AI key, encrypted by the OS in its own file, never in fai-data.json (ADR-0017).
+    const apiKeys = createApiKeyStore({
+      filePath: join(app.getPath('userData'), 'fai-ai-key.bin'),
+      storage: desktop.secretStorage(),
+    })
+    await apiKeys.load()
+    const chatService = createChatService({
+      keys: apiKeys,
+      makeModel: (apiKey) => createClaudeChat(apiKey),
+      bubble: {
+        delta: (text) => {
+          chatWindow.webContents.send(IpcChannels.chatReplyDelta, { text })
+        },
+        end: () => {
+          chatWindow.webContents.send(IpcChannels.chatReplyEnd)
+        },
+        error: (failure) => {
+          chatWindow.webContents.send(IpcChannels.chatReplyError, failure satisfies ChatReplyError)
+        },
+      },
+      react: () => {
+        window.webContents.send(IpcChannels.mascotReaction, {
+          kind: 'reply',
+        } satisfies MascotReaction)
+      },
+    })
     const panel = createPanelController({
       window: panelWindow,
       size: PANEL_SIZE,
@@ -125,6 +162,24 @@ function startApp(): void {
         return { x, y }
       },
       workAreaFor: (rectangle) => screen.getDisplayMatching(rectangle).workArea,
+    })
+    const chat = createChatController({
+      window: chatWindow,
+      size: CHAT_SIZE,
+      mascotSize: MASCOT_WINDOW_SIZE,
+      getMascotPosition: () => {
+        const [x = 0, y = 0] = window.getPosition()
+        return { x, y }
+      },
+      workAreaFor: (rectangle) => screen.getDisplayMatching(rectangle).workArea,
+      status: () => chatService.status(),
+      // One floating window at a time: the panel steps aside for the bubble, and vice versa.
+      onOpen: () => {
+        panel.hide()
+      },
+      onClose: () => {
+        chatService.close()
+      },
     })
     const mascot = createMascotController({
       window,
@@ -138,6 +193,7 @@ function startApp(): void {
       },
       onMoved: (position) => {
         panel.follow(position)
+        chat.follow(position)
       },
     })
     const keepMascotOnScreen = runWhenSettled(() => {
@@ -154,6 +210,7 @@ function startApp(): void {
       isAppUrl,
       (sender) => sender === panelWindow.webContents,
     )
+    const isChatWindow = createSenderGuard(isAppUrl, (sender) => sender === chatWindow.webContents)
     const isAppWindow = createSenderGuard(
       isAppUrl,
       (sender) => sender === window.webContents || sender === panelWindow.webContents,
@@ -167,9 +224,13 @@ function startApp(): void {
     })
     // The menu and the tray open the tasks tab; a reminder notification, the reminders tab.
     const openPanel = (): void => {
+      chat.hide()
       panel.open('tasks')
     }
-    const mascotMenu = Menu.buildFromTemplate(buildMascotMenu({ openPanel }))
+    const openChat = (): void => {
+      chat.open('chat')
+    }
+    const mascotMenu = Menu.buildFromTemplate(buildMascotMenu({ openPanel, openChat }))
     registerMascotHandlers(ipcMain, isMascotWindow, {
       setInteractive: (interactive) => {
         mascot.setInteractive(interactive)
@@ -217,6 +278,7 @@ function startApp(): void {
           title,
           body,
           onClick: () => {
+            chat.hide()
             panel.open('reminders')
           },
         })
@@ -242,6 +304,28 @@ function startApp(): void {
         },
       }),
     )
+    registerChatHandlers(ipcMain, isChatWindow, chatService)
+    const changeKey = (): void => {
+      chat.open('key')
+    }
+    const clearKey = (): void => {
+      void dialog
+        .showMessageBox({
+          type: 'question',
+          title: 'Fai',
+          message: 'Apagar a chave da IA?',
+          detail: 'Para conversar com a Fai de novo, será preciso colar a chave outra vez.',
+          buttons: ['Apagar', 'Cancelar'],
+          defaultId: 1,
+          cancelId: 1,
+        })
+        .then(async ({ response }) => {
+          if (response === 0) {
+            chat.hide()
+            await chatService.clearKey()
+          }
+        })
+    }
     const resourcesDir = join(app.getAppPath(), 'resources')
     const toggleFai = (): void => {
       toggleWindow(window)
@@ -253,7 +337,9 @@ function startApp(): void {
       // nativeImage picks tray-icon@2x.png by itself on high-DPI screens.
       icon: nativeImage.createFromPath(join(resourcesDir, 'tray-icon.png')),
       tooltip: 'Fai',
-      menu: Menu.buildFromTemplate(buildTrayMenu({ toggleFai, openPanel, quit })),
+      menu: Menu.buildFromTemplate(
+        buildTrayMenu({ toggleFai, openPanel, openChat, changeKey, clearKey, quit }),
+      ),
       onActivate: toggleFai,
     })
 

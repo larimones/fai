@@ -1,0 +1,25 @@
+/* Provisional (T7.10); the bubble style arrives in T7.11. */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+  background: transparent;
+}
+
+.bubble {
+  height: 100%;
+  box-sizing: border-box;
+  padding: 16px;
+  border: 2px solid #d9c8f5;
+  border-radius: 22px;
+  background: #ffffff;
+  color: #4a3470;
+  font-family: system-ui, sans-serif;
+}
+
+.bubble__title {
+  margin: 0;
+  font-size: 17px;
+  color: #6b45b5;
+}

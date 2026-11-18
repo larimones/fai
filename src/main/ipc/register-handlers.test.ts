@@ -5,6 +5,7 @@ import type { SenderGuard } from './invoke-handler'
 import {
   registerAppHandlers,
   registerMascotHandlers,
+  registerChatHandlers,
   registerReminderHandlers,
   registerTaskHandlers,
 } from './register-handlers'
@@ -185,5 +186,29 @@ describe('IPC registration (RNF-03, CA16)', () => {
     expect(reminders.create).toHaveBeenCalledExactlyOnceWith('tomar água', reminder.dueAt)
     expect(reminders.delete).toHaveBeenCalledExactlyOnceWith(ID)
     expect(reminders.list).toHaveBeenCalledOnce()
+  })
+
+  it('routes chat requests from the chat bubble only (ADR-0017)', async () => {
+    const ipc = fakeIpcMain()
+    const chat = { send: vi.fn(() => Promise.resolve()), saveKey: vi.fn(() => Promise.resolve()) }
+    registerChatHandlers(ipc.ipcMain, only('chat' as Window), chat)
+
+    await expect(
+      ipc.invoke('chat' as Window, IpcChannels.chatSend, { text: 'oi' }),
+    ).resolves.toEqual({ ok: true, value: null })
+    await ipc.invoke('chat' as Window, IpcChannels.chatSaveKey, { key: 'sk-ant-abc' })
+    for (const window of ['mascot', 'panel'] as const) {
+      await expect(ipc.invoke(window, IpcChannels.chatSend, { text: 'oi' })).resolves.toMatchObject(
+        {
+          ok: false,
+          error: { code: 'UNTRUSTED_SENDER' },
+        },
+      )
+      await ipc.invoke(window, IpcChannels.chatSaveKey, { key: 'sk-ant-abc' })
+    }
+
+    expect(chat.send).toHaveBeenCalledExactlyOnceWith('oi')
+    expect(chat.saveKey).toHaveBeenCalledExactlyOnceWith('sk-ant-abc')
+    expect(ipc.channels().sort()).toEqual([IpcChannels.chatSaveKey, IpcChannels.chatSend].sort())
   })
 })
