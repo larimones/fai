@@ -1,7 +1,7 @@
 # Feature 07 — Conversa com a Fai
 
 - **Etapa:** 8 (Conversa com a Fai), depois do MVP
-- **Status:** em implementação
+- **Status:** em verificação
 - **Requisitos:** RF-18, RF-19, RNF-15; também RNF-03, RNF-04, RNF-10, RNF-11, RNF-12
 
 ## Objetivo

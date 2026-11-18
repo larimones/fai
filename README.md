@@ -6,7 +6,7 @@
 
 Mascote feérica de desktop: uma pequena fada que flutua sobre as janelas, reage a cliques, pode ser arrastada e ajuda com tarefas e lembretes. Feita com Electron, React e TypeScript.
 
-> **Status:** Etapa 6 (lembretes e notificações) verificada no Linux, falta o Windows: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md). A Etapa 8 (conversa com a Fai, por um serviço de IA) tem as tarefas prontas e vem antes da Etapa 7 por decisão da dona do projeto; veja [specs/features/07-conversa-com-a-fai/tasks.md](specs/features/07-conversa-com-a-fai/tasks.md).
+> **Status:** Etapa 6 (lembretes e notificações) verificada no Linux, falta o Windows: lembretes com data e hora numa aba do painel, avisados por notificação e pela Fai, inclusive os perdidos. A Etapa 5 (painel de tarefas) está concluída. Veja [specs/features/06-lembretes-e-notificacoes/tasks.md](specs/features/06-lembretes-e-notificacoes/tasks.md). A Etapa 8 (conversa com a Fai num balão, por um serviço de IA) está implementada e em verificação; ela veio antes da Etapa 7 por decisão da dona do projeto. Veja [specs/features/07-conversa-com-a-fai/tasks.md](specs/features/07-conversa-com-a-fai/tasks.md).
 
 ## Ferramentas necessárias
 
@@ -89,13 +89,21 @@ Os scripts são os mesmos no Windows (PowerShell/cmd) e no Linux:
   - os já avisados vão para **Avisados (N)**, recolhida; dá para excluir pendentes e avisados pelo **✕**, com confirmação na linha;
   - se a Fai estava fechada ou o computador dormindo na hora, o aviso sai assim que ela abre ou o computador acorda, marcado **atrasado**; com mais de 3 atrasados de uma vez, sai uma notificação só: "Você tem N lembretes atrasados";
   - cada lembrete avisa uma vez só, mesmo que a notificação falhe.
-- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai", "Abrir painel" e "Sair".
+- **Conversar com a Fai:** clique com o botão direito sobre ela (ou na bandeja) e escolha "Conversar". Um balão de fala abre perto dela:
+  - na primeira vez, ele pede a chave de um serviço de IA (Claude, da Anthropic): crie uma em console.anthropic.com, em "API Keys", e cole no balão. A Fai confere a chave antes de guardar;
+  - escreva e aperte Enter: aparece "Fai está pensando…", e a resposta vem aos poucos, em português e em poucas frases; a Fai pisca a cada resposta;
+  - **custo:** cada mensagem gasta um pouquinho de crédito da sua conta no serviço (cerca de US$ 0,01 por mensagem curta com o modelo Claude Opus 5.5);
+  - **o que sai do computador:** só as mensagens da conversa aberta e as instruções de personalidade da Fai, e só quando você envia. Tarefas, lembretes e o resto ficam no computador;
+  - **nada da conversa é gravado:** fechar o balão (clicar fora ou Esc) apaga a conversa, e abrir de novo começa do zero. Com 30 mensagens numa conversa, a Fai pede para descansar; feche e abra o balão para começar outra;
+  - sem internet, com a chave errada ou com o serviço fora do ar, ela avisa com carinho e devolve o que você escreveu, para tentar de novo;
+  - a chave fica cifrada pelo sistema, num arquivo próprio (`fai-ai-key.bin`, na mesma pasta dos dados). Para trocar ou apagar, use a bandeja. No Linux sem cofre de senhas (libsecret ou KWallet), ela vale só até fechar a Fai.
+- **Bandeja do sistema** (área de notificação, perto do relógio): a estrela da Fai. No Windows, se ela não aparecer, clique na setinha **^**; dá para arrastá-la para a barra. Clique esquerdo mostra/oculta a Fai (só no Windows); o botão direito abre o menu com "Mostrar/ocultar Fai", "Abrir painel", "Conversar", "Trocar chave da IA…", "Apagar chave da IA" e "Sair".
 - **Fechar:** a Fai não tem botão de fechar; use "Sair" no menu da bandeja. "Mostrar/ocultar Fai" só a esconde, e o app continua rodando.
 - **Instância única:** abrir o app de novo não cria outra Fai; se ela estiver oculta, reaparece.
 
 ## Seus dados
 
-Tudo fica em um arquivo JSON local, sem rede (ADR-0003):
+Tudo fica em um arquivo JSON local (ADR-0003); a única coisa que usa a rede é a conversa com a Fai (veja acima):
 
 | Sistema | Arquivo                                                                     |
 | ------- | --------------------------------------------------------------------------- |
@@ -107,6 +115,7 @@ Tudo fica em um arquivo JSON local, sem rede (ADR-0003):
 - **Arquivo danificado:** se o arquivo não puder ser lido, a Fai guarda uma cópia como `fai-data.corrupt-<data>.json` na mesma pasta, começa do zero e avisa. A data no nome está em UTC (sufixo `Z`). Se o arquivo existir mas não puder ser lido nem movido (por exemplo, por permissão), a Fai avisa e não salva nada naquela execução, para não sobrescrevê-lo.
 - **Começar do zero:** feche a Fai (menu da bandeja → "Sair") e apague ou renomeie o `fai-data.json`. Ele é recriado no próximo início.
 - **Cópia de segurança:** com a Fai fechada, copie o `fai-data.json`.
+- **Chave da IA:** fica em `fai-ai-key.bin`, na mesma pasta, cifrada pelo sistema; não serve em outro computador nem em outra conta. Apague pela bandeja ("Apagar chave da IA").
 
 ## Estrutura
 
@@ -127,7 +136,7 @@ specs/          especificação (fonte da verdade)
 
 ## Segurança
 
-Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O renderer só fala com o processo principal pelas funções de `window.fai`; cada chamada tem o remetente verificado e o payload validado com zod. A CSP bloqueia scripts e conexões externas, e a navegação, as novas janelas e os pedidos de permissão são negados. Detalhes no [ADR-0007](specs/decisions/0007-electron-security-baseline.md).
+Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O renderer só fala com o processo principal pelas funções de `window.fai`, `window.faiPanel` e `window.faiChat`; cada chamada tem o remetente verificado e o payload validado com zod. A CSP bloqueia scripts e conexões externas, e a navegação, as novas janelas e os pedidos de permissão são negados. A conversa com a Fai é feita só pelo processo principal, que é quem guarda a chave ([ADR-0017](specs/decisions/0017-ai-conversation.md)). Detalhes no [ADR-0007](specs/decisions/0007-electron-security-baseline.md).
 
 ## Solução de problemas
 
@@ -137,6 +146,8 @@ Toda janela roda com `contextIsolation`, `sandbox` e sem `nodeIntegration`. O re
 - **Linux: a estrela não aparece na bandeja:** o ícone exige suporte a AppIndicator/StatusNotifier. No Ubuntu, a extensão "Ubuntu AppIndicators" já vem ativa; em outros GNOME, instale a extensão "AppIndicator and KStatusNotifierItem Support". KDE tem suporte nativo. Sem a bandeja, a Fai funciona, mas não há como fechá-la pela interface: encerre com Ctrl+C no terminal onde rodou `npm run dev`/`npm run preview`.
 - **Linux/Wayland: o app fecha sozinho (`exited with signal SIGTRAP`) ao mostrar um aviso:** o Electron está no backend Wayland nativo, em que os diálogos derrubam o processo. Use `npm run dev`/`npm run preview`, que já forçam XWayland, ou rode `electron --ozone-platform=x11 .` (ADR-0010).
 - **A notificação de um lembrete não aparece:** confira se o sistema não está em "Não perturbe" (ou "Assistente de foco", no Windows); a Fai pisca e o lembrete vai para "Avisados" mesmo assim. No Windows, antes do instalador (Etapa 7), a notificação pode aparecer com nome genérico ou não aparecer ao rodar pelo `npm run dev`/`preview` (ADR-0016).
+- **A Fai pede a chave da IA toda vez que abre:** no Linux, o computador não tem um cofre de senhas (libsecret ou KWallet) e a chave vale só até fechar a Fai; o balão avisa isso. Instale e desbloqueie o cofre do seu ambiente (no Ubuntu, já vem com o GNOME).
+- **"Algo deu errado por aqui" na conversa:** tente de novo. Se repetir, o terminal mostra `Fai: a resposta da conversa falhou (unknown: …)` com o tipo do erro (nunca a chave).
 - **`Error: Electron uninstall` ou `Electron failed to install correctly`:** o binário do Electron não foi baixado durante o `npm ci` (a pasta `node_modules/electron/dist` não existe). Com o Node 22 ativo (`nvm use`), rode `node node_modules/electron/install.js` e tente de novo.
 - **`npm ci` reclama da versão do Node:** rode `nvm use 22` e confira `node -v` (precisa ser ≥ 22.22.2).
 

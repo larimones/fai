@@ -12,6 +12,7 @@
 │                     persiste, avisa as janelas                              │
 │  main/persistence/  DataStore JSON (atômico, versionado, migrações)          │
 │  main/os/           DesktopIntegration (interface) + windows.ts / linux.ts   │
+│  main/chat/         conversa com a Fai: único lugar com rede (SDK do Claude) │
 └───────────────▲──────────────────────────────────────────────▲──────────────┘
                 │ IPC (canais nomeados em shared/ipc)          │
 ┌───────────────┴───────────┐                   ┌──────────────┴──────────────┐
@@ -22,6 +23,7 @@
 │ (canvas + máquina de      │                   │ (React: tarefas, lembretes) │
 │  estados de animação)     │                   │                             │
 └───────────────────────────┘                   └─────────────────────────────┘
+   + preload/chat.ts (window.faiChat) → renderer: balão de conversa (Etapa 8)
         domain/  ← funções puras usadas por main e renderer
         shared/  ← contrato IPC (canais, schemas zod, tipos)
 ```
@@ -47,6 +49,7 @@ O domínio não importa `zod`: schemas vivem na fronteira que validam (`shared` 
   - **Principal (Etapa 1)**: janela comum com moldura, só para validar a fundação. Substituída pela janela da mascote na Etapa 3; na Etapa 5 surge o painel.
   - **Mascote (Etapa 3)**: 188×160 px lógicos (ADR-0013), transparente, sem moldura, always-on-top, `skipTaskbar`, sem foco. Sem botão de fechar: o app encerra pelo "Sair" da bandeja. Detalhes no ADR-0004.
   - **Painel (Etapa 5)**: 320×520 px lógicos (320×440 até a Etapa 6, ADR-0016), com as abas "Tarefas" e "Lembretes", sem moldura, fora da barra de tarefas, sempre no topo; ao contrário da mascote, recebe foco. Abre ao lado da Fai e fecha ao perder o foco ou com Esc. Detalhes no ADR-0014 e na seção "Painel de tarefas (Etapa 5)".
+  - **Balão de conversa (Etapa 8)**: 300×380 px lógicos, ponta incluída, sem moldura, transparente, fora da barra de tarefas, sempre no topo, com foco. Abre acima da Fai (ou ao lado), fecha ao perder o foco ou com Esc, acompanha o arrasto; abrir o balão esconde o painel, e vice-versa. Detalhes no ADR-0017 e na seção "Conversa com a Fai (Etapa 8)".
 
 ## Contrato IPC
 
@@ -55,7 +58,7 @@ Regras:
 1. Canais nomeados `dominio:acao`, declarados em `src/shared/ipc/channels.ts` como constantes.
 2. Cada canal tem schema zod de entrada e saída em `src/shared/ipc/schemas.ts`.
 3. Renderer → main por `ipcRenderer.invoke` (request/response) ou `send` (eventos de alta frequência, como arrasto). Main → renderer por `webContents.send` em canais de evento declarados.
-4. O handler no main: (a) verifica o remetente — o `webContents` é **a janela dona do canal** (`mascot:*` só a mascote, `tasks:*` e `reminders:*` só o painel, `app:get-info` as duas; ADR-0014) e `senderFrame.url` é uma das páginas do app; (b) faz `schema.parse` do payload; (c) executa; (d) retorna objeto validado. Erros viram `{ ok: false, error: { code, message } }`, sem stack para o renderer; recusas de regra (`INVALID_TITLE`, `INVALID_TEXT`, `DUE_NOT_IN_FUTURE`, `NOT_FOUND`) vêm do serviço como `IpcRuleError`, com mensagem em pt-BR para mostrar na tela.
+4. O handler no main: (a) verifica o remetente — o `webContents` é **a janela dona do canal** (`mascot:*` só a mascote, `tasks:*` e `reminders:*` só o painel, `chat:*` só o balão, `app:get-info` a mascote e o painel; ADR-0014, ADR-0017) e `senderFrame.url` é uma das páginas do app; (b) faz `schema.parse` do payload; (c) executa; (d) retorna objeto validado. Erros viram `{ ok: false, error: { code, message } }`, sem stack para o renderer; recusas de regra (`INVALID_TITLE`, `INVALID_TEXT`, `DUE_NOT_IN_FUTURE`, `NOT_FOUND`, `BUSY`, `LIMIT`, `NO_KEY`, `INVALID_KEY`, `KEY_NOT_SAVED`) vêm do serviço como `IpcRuleError`, com mensagem em pt-BR para mostrar na tela.
 5. O preload nunca repassa o `event` do Electron ao renderer, e valida com o `eventContract` o payload dos eventos main → janela antes de repassá-lo.
 
 Canais (✅ implementados; demais planejados, revisados em cada etapa):
@@ -66,7 +69,7 @@ Canais (✅ implementados; demais planejados, revisados em cada etapa):
 | `mascot:set-interactive` ✅ | send          | mascote | `{ interactive: boolean }`                                                                              | —                             |
 | `mascot:drag` ✅            | send          | mascote | `{ phase: 'start'\|'move'\|'end' }` (cursor lido no main)                                               | —                             |
 | `mascot:open-menu` ✅       | send          | mascote | —                                                                                                       | —                             |
-| `mascot:reaction` ✅        | evento main→r | mascote | `{ kind: 'celebrate' \| 'reminder' }`                                                                   | —                             |
+| `mascot:reaction` ✅        | evento main→r | mascote | `{ kind: 'celebrate' \| 'reminder' \| 'reply' }`                                                        | —                             |
 | `tasks:list` ✅             | invoke        | painel  | —                                                                                                       | `Task[]`                      |
 | `tasks:create` ✅           | invoke        | painel  | `{ title }`                                                                                             | `Task`                        |
 | `tasks:set-done` ✅         | invoke        | painel  | `{ id, done }`                                                                                          | `Task`                        |
@@ -76,6 +79,13 @@ Canais (✅ implementados; demais planejados, revisados em cada etapa):
 | `reminders:delete` ✅       | invoke        | painel  | `{ id }`                                                                                                | —                             |
 | `panel:opened` ✅           | evento main→r | painel  | `{ tab: 'tasks' \| 'reminders' }` (mostra a aba, recarrega as listas, recolhe as seções e foca o campo) | —                             |
 | `reminders:changed` ✅      | evento main→r | painel  | — (o agendador avisou algo; o painel recarrega os lembretes)                                            | —                             |
+| `chat:send` ✅              | invoke        | balão   | `{ text }` (resolve quando a resposta, ou a falha, chega ao balão)                                      | —                             |
+| `chat:save-key` ✅          | invoke        | balão   | `{ key }` (conferida no serviço antes de guardar; nunca volta ao renderer)                              | —                             |
+| `chat:opened` ✅            | evento main→r | balão   | `{ mode: 'chat' \| 'key', hasKey, keyPersists }`                                                        | —                             |
+| `chat:placed` ✅            | evento main→r | balão   | `{ tail: 'down' \| 'left' \| 'right', tailAt }` (ao abrir e durante o arrasto)                          | —                             |
+| `chat:reply-delta` ✅       | evento main→r | balão   | `{ text }` (um pedaço da resposta)                                                                      | —                             |
+| `chat:reply-end` ✅         | evento main→r | balão   | —                                                                                                       | —                             |
+| `chat:reply-error` ✅       | evento main→r | balão   | `{ message, text }` (mensagem gentil e texto devolvido ao campo; `text: ''` no aviso das 30 mensagens)  | —                             |
 | `data:changed`              | evento main→r | painel  | `{ tasks, reminders }` (adiado: só o painel muda tarefas e recebe cada resultado; plano da feature 05)  | —                             |
 
 API exposta (forma final ilustrativa): `window.fai.app.getInfo()`, `window.fai.tasks.create({ title })`, … Tipada por `src/shared/ipc/api.ts` e declarada em `src/renderer/env.d.ts`.
@@ -118,6 +128,7 @@ Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
   - `quarantined`: JSON inválido, documento inválido, versão futura ou sem caminho de migração → o arquivo é renomeado para `fai-data.corrupt-<AAAAMMDDTHHMMSSZ>.json` (UTC, sem `:`), o app começa vazio e avisa com um diálogo;
   - `unavailable`: o arquivo existe, mas não pôde ser lido nem renomeado → o app começa vazio, avisa e **não grava** nesta execução, para não sobrescrever o arquivo.
 - **Escrita** (`save()`): _debounce_ de 200 ms (o último dado vence), fila serializada, `writeFile(fai-data.json.tmp)` + `rename` para o final; novas tentativas em `EPERM`/`EBUSY`/`EACCES` após 50, 100, 200 e 400 ms (antivírus no Windows). Falha persistente → `onError`, `.tmp` removido, arquivo anterior intacto.
+- **A conversa não é gravada.** A chave do serviço de IA fica num arquivo próprio, `fai-ai-key.bin`, ao lado do documento: só os bytes cifrados pelo sistema (`safeStorage`, API assíncrona), gravados com `.tmp` + `rename` e permissão `0600` (ADR-0017). Fora do `fai-data.json`, fora das migrações.
 - **Inicialização e encerramento** (`startup.ts`): `created`, `migrated` e `quarantined` gravam o documento na hora; `before-quit` espera o `flush()` antes de encerrar.
 - O schema de cada versão só aceita tarefas e lembretes que o domínio poderia ter criado (UUID, instantes ISO, título dentro da regra); um arquivo editado à mão com tarefa inválida vai para a quarentena.
 
@@ -131,6 +142,7 @@ Implementado na Etapa 2 em `src/main/persistence/` (`createDataStore`):
 | Transparência                     | nativa                                                               | exige compositor; Wayland limitado → XWayland via `--ozone-platform=x11` (ADR-0010) |
 | Notificações                      | Toast; `app.setAppUserModelId('io.github.larimones.fai')` no início  | portal de notificações (libnotify em "modo confinado"): só título, corpo e clique   |
 | Bandeja                           | nativa                                                               | depende de suporte a AppIndicator/StatusNotifier no ambiente                        |
+| Segredos (chave da IA)            | `safeStorage` (DPAPI, do usuário do Windows)                         | `safeStorage` só com cofre de senhas (libsecret, KWallet); sem ele, só em memória   |
 
 Código de plataforma fica **só** ali; o resto do app conversa com a interface. A versão Linux completa vira uma nova implementação da interface.
 
@@ -142,6 +154,7 @@ Métodos atuais: `createTray({ icon, tooltip, menu, onActivate })` (Etapa 2) e `
 - `will-navigate` e `setWindowOpenHandler` negam tudo; `setPermissionRequestHandler` nega tudo.
 - CSP estrita em produção, entregue por `<meta>` gerado no build a partir de `src/main/security/csp.ts` (cabeçalhos não existem em `file://`).
 - Sem `remote`, sem `shell.openExternal` com entrada do renderer.
+- Rede só no main e só para a conversa (Etapa 8, ADR-0017): o SDK `@anthropic-ai/sdk` só pode ser importado em `main/chat/claude-chat.ts` (lint e `tests/architecture/ai-sdk-boundary.test.ts`); o cliente recebe a chave, o endereço oficial e `logLevel: 'off'` explicitamente, sem nada do ambiente; a CSP das janelas não muda.
 - Etapa 7: Electron Fuses e assinatura (se houver certificado) no empacotamento.
 
 ## Testes
@@ -189,3 +202,13 @@ Implementado conforme o ADR-0006 e o ADR-0016:
 - **SO** (`os/notifier.ts`): a `Notification` fica guardada até `close` (sem isso o coletor de lixo leva o tratador de clique); `failed` vai ao log.
 - **Preloads**: `window.faiPanel` ganhou `reminders.*` e `onRemindersChanged`; `onOpened` passa a aba.
 - **Renderer**: `PanelApp.tsx` cuida das abas (`role="tablist"`, setas, Home e End), das listas e dos eventos; `TasksTab.tsx` e `RemindersTab.tsx` guardam o estado de cada aba e voltam limpas a cada abertura (`use-panel-opening.ts`, que só move o foco ao campo na abertura, nunca na troca manual de aba). `ReminderForm.tsx` (atalhos que preenchem o `datetime-local`, a única fonte do horário) e `ReminderRow.tsx` ("atrasado" fora do texto riscado). A Fai pisca ao receber `mascot:reaction` com `reminder`.
+
+## Conversa com a Fai (Etapa 8)
+
+Implementada conforme o ADR-0017 (promovida do backlog; vem antes da Etapa 7 por decisão da dona do projeto):
+
+- **Domínio** (`domain/chat/conversation.ts`, `bubble-placement.ts`): texto de 1 a 1000 pontos de código (`validateText`, a mesma regra do título com outro limite), uma resposta por vez (`BUSY`), limite de 30 mensagens da pessoa por conversa (`LIMIT`), a mensagem que falhou sai e devolve o texto; o balão abre acima da Fai e centrado nela, senão ao lado, sempre dentro da área de trabalho, com a ponta (`tail`, `tailAt`) apontando para ela.
+- **Main**: `chat/claude-chat.ts` é o único arquivo com o SDK: pede ao `claude-opus-5-5` (`beta.messages.stream`, `max_tokens` 4096, `effort: 'low'`, `fallbacks: 'default'`) só com a personalidade aprovada (`chat/personality.ts`) e as mensagens da conversa aberta; traduz recusas e erros do SDK em `ChatFailure`; confere a chave com `models.retrieve`, que não gasta tokens. `chat/chat-service.ts` guarda a conversa só em memória, aborta o pedido e esquece tudo ao fechar o balão (pedaços atrasados de uma conversa fechada são descartados), manda as mensagens gentis em pt-BR, o aviso das 30 mensagens e a reação `reply`, e registra no log só o tipo da falha e o seu detalhe seguro (classe, código HTTP e tipo; a mensagem da API só em 400). `chat/api-key-store.ts` guarda a chave cifrada (ou só em memória). `chat/chat-controller.ts` e `windows/chat-window.ts` cuidam da janela do balão. Menu da Fai e bandeja com "Conversar"; bandeja com "Trocar chave da IA…" e "Apagar chave da IA" (confirmação nativa).
+- **SO**: `DesktopIntegration.secretStorage()` (assíncrono). Só a API assíncrona do `safeStorage`: no Linux, o que `encryptString` grava não decifra na execução seguinte.
+- **Preload**: `preload/chat.ts` expõe `window.faiChat` (`send`, `saveKey`, `onOpened`, `onPlaced`, `onReplyDelta`, `onReplyEnd`, `onReplyError`); nada devolve a chave.
+- **Renderer**: terceira página, `chat.html`. `chat/ChatApp.tsx` com um `useReducer` (`chat-state.ts`), `MessageList.tsx` (rolagem, `aria-live`), `ChatForm.tsx` e `KeyForm.tsx` (campo de senha). A ponta é posicionada por uma variável CSS definida pelo CSSOM, sem atributo `style`. Estilo em `chat.css`, com as cores no `:root`; `tests/ui/chat-contrast.test.ts` mede cada par. A Fai pisca uma vez a cada resposta.
