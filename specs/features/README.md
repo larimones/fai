@@ -12,4 +12,4 @@ Status: `especificada` → `planejada` → `em implementação` → `em verifica
 | 04      | 4     | concluída      | [04-animacao-e-reacoes](04-animacao-e-reacoes/spec.md)                                |
 | 05      | 5     | concluída      | [05-painel-de-tarefas](05-painel-de-tarefas/spec.md)                                  |
 | 06      | 6     | em verificação | [06-lembretes-e-notificacoes](06-lembretes-e-notificacoes/spec.md)                    |
-| 07      | 8     | especificada   | [07-conversa-com-a-fai](07-conversa-com-a-fai/spec.md)                                |
+| 07      | 8     | planejada      | [07-conversa-com-a-fai](07-conversa-com-a-fai/spec.md)                                |

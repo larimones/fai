@@ -1,7 +1,7 @@
 # Feature 07 — Conversa com a Fai
 
 - **Etapa:** 8 (Conversa com a Fai), depois do MVP
-- **Status:** especificada
+- **Status:** planejada
 - **Requisitos:** RF-18, RF-19, RNF-15; também RNF-03, RNF-04, RNF-10, RNF-11, RNF-12
 
 ## Objetivo
@@ -58,16 +58,8 @@ A conversa é a primeira coisa da Fai que usa a rede. Por isso a privacidade con
 - 2026-11-18: a chave é colada **no próprio balão**, guardada cifrada pelo sistema.
 - 2026-11-18: o balão **fecha como o painel** (clicar fora, Esc); respostas **curtas e carinhosas**.
 
+- 2026-11-18 (plano): modelo **Claude Opus 5.5**; resposta **aos poucos**; **limite de 30 mensagens** por conversa; a Fai **pisca a cada resposta**; personalidade **aprovada**; trocar e apagar a chave **pelo menu da bandeja**.
+
 ## Perguntas em aberto
 
-Para o `/spec:plan`:
-
-- Qual serviço e qual modelo de IA, e quanto custa por conversa (a dona do projeto escolhe com os números na mão).
-- Balão numa janela própria (como o painel) ou outro arranjo; tamanho, posição em relação à Fai e se ele acompanha o arrasto.
-- Respostas aparecendo aos poucos (_streaming_) ou de uma vez; tempo máximo de espera.
-- Limite de tamanho da mensagem e de quantas mensagens da conversa vão para o serviço.
-- Onde trocar e apagar a chave (menu do balão, menu da bandeja).
-- Guarda cifrada da chave no Linux (o cofre de senhas do sistema pode não existir) e o que fazer sem ele.
-- Texto das instruções de personalidade da Fai, para a dona do projeto aprovar.
-- A Fai reage enquanto "pensa" ou ao responder, com os quadros que já existem?
-- ADR da mudança de privacidade e da CSP/rede (revisão do ADR-0007).
+Nenhuma. As do `/spec:create` foram respondidas no `plan.md` e no ADR-0017 (serviço e modelo, janela do balão, _streaming_, limites, chave no Linux, personalidade, reação).

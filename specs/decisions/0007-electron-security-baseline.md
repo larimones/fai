@@ -18,7 +18,7 @@
    - **Desvio do plano original (registrado na Etapa 1):** o cabeçalho via `session.webRequest.onHeadersReceived` foi descartado porque não há cabeçalhos HTTP em `file://`, então ele nunca valeria em produção; o `<meta>` é o mecanismo efetivo. `frame-ancestors` saiu da política porque navegadores ignoram essa diretiva em `<meta>`. O bloqueio de iframes de terceiros já vem de `default-src 'none'`.
    - Verificado em execução (Linux, dev e build): `fetch('https://example.com')` é bloqueado pela CSP e o Electron não emite o aviso "Insecure Content-Security-Policy".
 7. **Conteúdo:** nenhuma URL remota carregada; janelas carregam `file://` (produção) ou o servidor local do Vite (desenvolvimento).
-8. **Segredos:** nunca no renderer nem no repositório; quando existirem (pós-MVP), ficam no main com `safeStorage`.
+8. **Segredos:** nunca no renderer nem no repositório; quando existirem (pós-MVP), ficam no main com `safeStorage`. Implementado na Etapa 8 pelo ADR-0017 (chave do serviço de IA). A partir dela, o main faz pedidos de rede ao serviço de IA; a CSP das janelas continua a mesma, sem origem remota.
 9. **Empacotamento (Etapa 7):** Electron Fuses — `RunAsNode` off, `EnableNodeOptionsEnvironmentVariable` off, `EnableNodeCliInspectArguments` off, `EnableEmbeddedAsarIntegrityValidation` on, `OnlyLoadAppFromAsar` on.
 
 ## Alternativas
