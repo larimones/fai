@@ -120,6 +120,14 @@ function startApp(): void {
     const desktop = createDesktopIntegration(process.platform)
     // Before the first notification, so Windows shows it under Fai's name (ADR-0016).
     desktop.prepareNotifications()
+    // The AI key, encrypted by the OS in its own file, never in fai-data.json (ADR-0017).
+    // Every await happens before the windows exist: once a page loads it calls its channels,
+    // and they must already be registered (found by /spec:verify 07).
+    const apiKeys = createApiKeyStore({
+      filePath: join(app.getPath('userData'), 'fai-ai-key.bin'),
+      storage: await desktop.secretStorage(),
+    })
+    await apiKeys.load()
     const window = createMascotWindow(rendererEntryUrl, {
       position: initialMascotPosition(data.mascot.position, screen),
       devTools: isDevelopment,
@@ -127,12 +135,6 @@ function startApp(): void {
     mascotWindow = window
     const panelWindow = createPanelWindow(panelEntryUrl, { devTools: isDevelopment })
     const chatWindow = createChatWindow(chatEntryUrl, { devTools: isDevelopment })
-    // The AI key, encrypted by the OS in its own file, never in fai-data.json (ADR-0017).
-    const apiKeys = createApiKeyStore({
-      filePath: join(app.getPath('userData'), 'fai-ai-key.bin'),
-      storage: await desktop.secretStorage(),
-    })
-    await apiKeys.load()
     const chatService = createChatService({
       keys: apiKeys,
       makeModel: (apiKey) => createClaudeChat(apiKey),
