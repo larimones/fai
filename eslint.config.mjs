@@ -17,6 +17,12 @@ const NODE_BUILTINS = [
   'https',
 ]
 
+/** The AI service SDK lives behind one adapter in the main process (ADR-0017). */
+const AI_SDK = {
+  group: ['@anthropic-ai/sdk', '@anthropic-ai/sdk/*'],
+  message: 'O SDK do serviço de IA só entra em src/main/chat/claude-chat.ts (ADR-0017).',
+}
+
 export default defineConfig(
   globalIgnores(['out/', 'dist/', 'coverage/']),
   js.configs.recommended,
@@ -44,6 +50,7 @@ export default defineConfig(
               group: ['electron', ...NODE_BUILTINS],
               message: 'O renderer não acessa Node nem Electron; use window.fai.',
             },
+            AI_SDK,
           ],
         },
       ],
@@ -58,9 +65,18 @@ export default defineConfig(
         {
           patterns: [
             { group: NODE_BUILTINS, message: 'Preloads rodam em sandbox: sem módulos Node.' },
+            AI_SDK,
           ],
         },
       ],
+    },
+  },
+  // A later block with the same rule replaces this one, so the layer blocks repeat AI_SDK.
+  {
+    files: ['src/main/**/*.ts', 'src/shared/**/*.ts'],
+    ignores: ['src/main/chat/claude-chat.ts', 'src/main/chat/claude-chat.test.ts'],
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [AI_SDK] }],
     },
   },
   {
@@ -75,6 +91,7 @@ export default defineConfig(
               message:
                 'A persistência não depende do Electron: receba caminhos e callbacks por parâmetro.',
             },
+            AI_SDK,
           ],
         },
       ],
@@ -95,6 +112,7 @@ export default defineConfig(
               group: ['**/main/**', '**/preload/**', '**/renderer/**', '**/shared/**'],
               message: 'O domínio não depende de outras camadas.',
             },
+            AI_SDK,
           ],
         },
       ],
