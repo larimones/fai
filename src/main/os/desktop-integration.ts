@@ -23,8 +23,9 @@ export interface NotifyOptions {
 export type SecretStorage =
   | {
       readonly persists: true
-      encrypt(text: string): Buffer
-      decrypt(data: Buffer): string
+      encrypt(text: string): Promise<Buffer>
+      /** `reEncrypt`: the OS rotated its key; encrypt the secret again to keep it readable. */
+      decrypt(data: Buffer): Promise<{ readonly text: string; readonly reEncrypt: boolean }>
     }
   | { readonly persists: false }
 
@@ -46,7 +47,7 @@ export interface DesktopIntegration {
   /** Notifications shown and not closed yet (kept alive so their click works). */
   openNotifications(): number
   /** How secrets can be kept on this computer; call after the app is ready. */
-  secretStorage(): SecretStorage
+  secretStorage(): Promise<SecretStorage>
 }
 
 export function createDesktopIntegration(platform: NodeJS.Platform): DesktopIntegration {

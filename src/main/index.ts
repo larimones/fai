@@ -130,7 +130,7 @@ function startApp(): void {
     // The AI key, encrypted by the OS in its own file, never in fai-data.json (ADR-0017).
     const apiKeys = createApiKeyStore({
       filePath: join(app.getPath('userData'), 'fai-ai-key.bin'),
-      storage: desktop.secretStorage(),
+      storage: await desktop.secretStorage(),
     })
     await apiKeys.load()
     const chatService = createChatService({

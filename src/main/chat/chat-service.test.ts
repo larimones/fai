@@ -14,8 +14,12 @@ const MARKER = 'borboleta-violeta-42'
 
 const encrypting: SecretStorage = {
   persists: true,
-  encrypt: (text) => Buffer.from(Buffer.from(text).toString('base64'), 'utf8'),
-  decrypt: (data) => Buffer.from(data.toString('utf8'), 'base64').toString('utf8'),
+  encrypt: (text) => Promise.resolve(Buffer.from(Buffer.from(text).toString('base64'), 'utf8')),
+  decrypt: (data) =>
+    Promise.resolve({
+      text: Buffer.from(data.toString('utf8'), 'base64').toString('utf8'),
+      reEncrypt: false,
+    }),
 }
 
 interface Turn {
@@ -249,6 +253,18 @@ describe('chat service (RF-18, CA3, CA5, CA6, ADR-0017)', () => {
       expect(bubble.end).toHaveBeenCalledOnce()
     },
   )
+
+  it('logs what kind of failure happened, with its detail, to find causes later', async () => {
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const { service, fake } = await setup()
+    fake.model.stream = () => Promise.reject(new ChatFailureError('unknown', 'BadRequestError 400'))
+
+    await service.send('oi')
+
+    expect(error).toHaveBeenCalledExactlyOnceWith(
+      'Fai: a resposta da conversa falhou (unknown: BadRequestError 400).',
+    )
+  })
 
   it('never writes the key to the log', async () => {
     const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)

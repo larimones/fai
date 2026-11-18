@@ -25,7 +25,11 @@ export type ChatFailure =
   | 'unknown'
 
 export class ChatFailureError extends Error {
-  constructor(readonly failure: ChatFailure) {
+  constructor(
+    readonly failure: ChatFailure,
+    /** For the log: the error class, HTTP status and type; never the key or headers. */
+    readonly detail?: string,
+  ) {
     super(`chat failed: ${failure}`)
     this.name = 'ChatFailureError'
   }
@@ -92,6 +96,24 @@ function failureOf(error: unknown): ChatFailure {
   return 'unknown'
 }
 
+/**
+ * What the log may say about an error: its class, status and type. The API's own message only
+ * for a malformed request (400), which describes the request's shape; any trace of the key is cut.
+ */
+function detailOf(error: unknown, apiKey: string): string {
+  const hide = (text: string): string => text.split(apiKey).join('[chave]')
+  if (error instanceof Anthropic.APIError && error.status !== undefined) {
+    const head = [error.constructor.name, String(error.status), error.type ?? '']
+      .filter((part) => part !== '')
+      .join(' ')
+    return error.status === 400 ? hide(`${head}: ${error.message}`) : head
+  }
+  if (error instanceof Anthropic.AnthropicError) {
+    return hide(`${error.constructor.name}: ${error.message}`)
+  }
+  return error instanceof Error ? error.constructor.name : typeof error
+}
+
 export function createClaudeChat(
   apiKey: string,
   makeClient: (options: ClientOptions) => ClaudeClientPort = (options) => new Anthropic(options),
@@ -122,7 +144,7 @@ export function createClaudeChat(
       try {
         final = await stream.finalMessage()
       } catch (error) {
-        throw new ChatFailureError(failureOf(error))
+        throw new ChatFailureError(failureOf(error), detailOf(error, apiKey))
       }
       if (final.stop_reason === 'refusal') {
         throw new ChatFailureError('refusal')
@@ -134,7 +156,7 @@ export function createClaudeChat(
       try {
         await client.models.retrieve(CHAT_MODEL)
       } catch (error) {
-        throw new ChatFailureError(failureOf(error))
+        throw new ChatFailureError(failureOf(error), detailOf(error, apiKey))
       }
     },
   }

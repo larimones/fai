@@ -21,6 +21,16 @@ export interface ApiKeyStore {
 export function createApiKeyStore({ filePath, storage }: ApiKeyStoreOptions): ApiKeyStore {
   let key: string | null = null
 
+  const save = async (next: string): Promise<void> => {
+    if (storage.persists) {
+      // Written beside the file and renamed over it, so a crash never leaves half a key.
+      const temporary = `${filePath}.tmp`
+      await writeFile(temporary, await storage.encrypt(next), { mode: 0o600 })
+      await rename(temporary, filePath)
+    }
+    key = next
+  }
+
   return {
     persists: storage.persists,
 
@@ -34,26 +44,24 @@ export function createApiKeyStore({ filePath, storage }: ApiKeyStoreOptions): Ap
       } catch {
         return
       }
+      let decrypted: { readonly text: string; readonly reEncrypt: boolean }
       try {
-        key = storage.decrypt(data)
+        decrypted = await storage.decrypt(data)
       } catch {
         // Never log the bytes: they are the key, encrypted.
         console.warn('Fai: a chave da IA guardada não pôde ser lida; ela será pedida de novo.')
         key = null
+        return
+      }
+      key = decrypted.text
+      if (decrypted.reEncrypt) {
+        await save(decrypted.text)
       }
     },
 
     get: () => key,
 
-    async save(next) {
-      if (storage.persists) {
-        // Written beside the file and renamed over it, so a crash never leaves half a key.
-        const temporary = `${filePath}.tmp`
-        await writeFile(temporary, storage.encrypt(next), { mode: 0o600 })
-        await rename(temporary, filePath)
-      }
-      key = next
-    },
+    save,
 
     async clear() {
       key = null

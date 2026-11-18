@@ -1,4 +1,33 @@
-/* Provisional (T7.10); the bubble style arrives in T7.11. */
+/*
+ * Chat bubble in the panel's pastel lilac and white (ADR-0014, ADR-0017). Every text pair is
+ * checked for 4.5:1 and every control border for 3:1 by tests/ui/chat-contrast.test.ts, which
+ * reads these tokens.
+ */
+:root {
+  --surface: #ffffff;
+  --surface-end: #f4eefd;
+  --border: #d9c8f5;
+  --text: #4a3470;
+  --title: #6b45b5;
+  --muted: #6e5a94;
+  --user: #efe6fb;
+  --user-text: #4a3470;
+  --fai: #ffffff;
+  --accent: #7a52c7;
+  --on-accent: #ffffff;
+  --field-border: #9b7fd4;
+  --focus: #7a52c7;
+  --error: #a3264b;
+
+  /* Where the tail sits along its edge; set by ChatApp from chat:placed. */
+  --tail-at: 150px;
+  --tail-size: 14px;
+
+  font-family: system-ui, sans-serif;
+  font-size: 14px;
+  color: var(--text);
+}
+
 html,
 body,
 #root {
@@ -7,19 +36,201 @@ body,
   background: transparent;
 }
 
-.bubble {
-  height: 100%;
+* {
   box-sizing: border-box;
-  padding: 16px;
-  border: 2px solid #d9c8f5;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* The window includes the tail: the bubble leaves room for it on the side that points to Fai. */
+.bubble {
+  position: relative;
+  height: 100%;
+  padding: 2px;
+}
+
+.bubble--tail-down {
+  padding-bottom: var(--tail-size);
+}
+
+.bubble--tail-left {
+  padding-left: var(--tail-size);
+}
+
+.bubble--tail-right {
+  padding-right: var(--tail-size);
+}
+
+.bubble__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  height: 100%;
+  padding: 14px;
+  border: 2px solid var(--border);
   border-radius: 22px;
-  background: #ffffff;
-  color: #4a3470;
-  font-family: system-ui, sans-serif;
+  background: linear-gradient(180deg, var(--surface) 0%, var(--surface-end) 100%);
+}
+
+/* The tail: a rotated square with the bubble's border on its two outer sides. */
+.bubble__body::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--border);
+  background: var(--surface-end);
+  transform: rotate(45deg);
+}
+
+.bubble--tail-down .bubble__body::after {
+  bottom: -10px;
+  left: calc(var(--tail-at) - 10px);
+  border-top: 0;
+  border-left: 0;
+}
+
+.bubble--tail-left .bubble__body::after {
+  top: calc(var(--tail-at) - 10px);
+  left: -10px;
+  border-top: 0;
+  border-right: 0;
+  background: var(--surface);
+}
+
+.bubble--tail-right .bubble__body::after {
+  top: calc(var(--tail-at) - 10px);
+  right: -10px;
+  border-bottom: 0;
+  border-left: 0;
+  background: var(--surface);
 }
 
 .bubble__title {
   margin: 0;
   font-size: 17px;
-  color: #6b45b5;
+  color: var(--title);
+}
+
+.bubble__text {
+  margin: 0;
+}
+
+.bubble__hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.bubble__error,
+.bubble__notice {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.bubble__error {
+  color: var(--error);
+}
+
+.bubble__notice {
+  color: var(--title);
+}
+
+.messages {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-color: var(--accent) transparent;
+  scrollbar-width: thin;
+}
+
+.messages__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.message {
+  max-width: 85%;
+  padding: 7px 10px;
+  border-radius: 14px;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.message--user {
+  align-self: flex-end;
+  border-bottom-right-radius: 4px;
+  background: var(--user);
+  color: var(--user-text);
+}
+
+.message--fai {
+  align-self: flex-start;
+  border: 1.5px solid var(--border);
+  border-bottom-left-radius: 4px;
+  background: var(--fai);
+  color: var(--text);
+}
+
+.messages__thinking {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.chat-form,
+.key-form {
+  display: flex;
+  gap: 6px;
+}
+
+.key-form {
+  flex-direction: column;
+}
+
+.field {
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1.5px solid var(--field-border);
+  border-radius: 12px;
+  background: var(--fai);
+  color: var(--text);
+  font: inherit;
+}
+
+.field::placeholder {
+  color: var(--muted);
+}
+
+.field:disabled {
+  opacity: 0.7;
+}
+
+.button {
+  border: 0;
+  border-radius: 12px;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button:disabled {
+  cursor: default;
+  opacity: 0.7;
+}
+
+.button--accent {
+  background: var(--accent);
+  color: var(--on-accent);
 }

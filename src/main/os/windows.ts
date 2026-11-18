@@ -29,9 +29,11 @@ export function createWindowsDesktopIntegration(): DesktopIntegration {
       // Without it, toasts do not show or show as "electron.app.Electron" (ADR-0006).
       app.setAppUserModelId(APP_USER_MODEL_ID)
     },
-    secretStorage() {
+    async secretStorage() {
       // DPAPI: tied to the Windows user account.
-      return safeStorage.isEncryptionAvailable() ? osEncryptedStorage() : { persists: false }
+      return (await safeStorage.isAsyncEncryptionAvailable())
+        ? osEncryptedStorage()
+        : { persists: false }
     },
     ...notifier,
   }

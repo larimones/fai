@@ -158,7 +158,7 @@ describe('Claude chat (RF-18, RNF-15, ADR-0017)', () => {
         onText: () => undefined,
         signal: new AbortController().signal,
       }),
-    ).rejects.toEqual(new ChatFailureError('refusal'))
+    ).rejects.toMatchObject({ failure: 'refusal' })
   })
 
   it.each([
@@ -181,7 +181,7 @@ describe('Claude chat (RF-18, RNF-15, ADR-0017)', () => {
         onText: () => undefined,
         signal: new AbortController().signal,
       }),
-    ).rejects.toEqual(new ChatFailureError(failure))
+    ).rejects.toMatchObject({ failure: failure })
   })
 
   it('checks a key by looking up the model, which costs no tokens', async () => {
@@ -196,9 +196,9 @@ describe('Claude chat (RF-18, RNF-15, ADR-0017)', () => {
   it('reports why a key check failed', async () => {
     const fake = fakeClient({ error: apiError(401) })
 
-    await expect(createClaudeChat(KEY, () => fake.client).checkKey()).rejects.toEqual(
-      new ChatFailureError('invalid-key'),
-    )
+    await expect(createClaudeChat(KEY, () => fake.client).checkKey()).rejects.toMatchObject({
+      failure: 'invalid-key',
+    })
   })
 })
 
@@ -211,5 +211,54 @@ describe("Fai's personality (owner approval, 2026-11-18)", () => {
     expect(FAI_PERSONALITY).toContain('você só conversa')
     expect(FAI_PERSONALITY).toContain('Não finja ter feito algo que não fez.')
     expect(FAI_PERSONALITY).toContain('Não peça dados pessoais.')
+  })
+})
+
+describe('failure details for the log (ADR-0017)', () => {
+  it('names the error class and status, and the API message only for malformed requests', async () => {
+    const cases: [Error, string][] = [
+      [
+        Anthropic.APIError.generate(
+          400,
+          { error: { type: 'invalid_request_error', message: 'messages.1: vazio' } },
+          '400 messages.1: vazio',
+          headers,
+        ),
+        'BadRequestError 400 invalid_request_error: 400 {"error":{"type":"invalid_request_error","message":"messages.1: vazio"}}',
+      ],
+      [apiError(404), 'NotFoundError 404 x'],
+      [
+        new Anthropic.AnthropicError('stream ended without a message'),
+        'AnthropicError: stream ended without a message',
+      ],
+      [new TypeError('x is undefined'), 'TypeError'],
+    ]
+    for (const [error, detail] of cases) {
+      const fake = fakeClient({ error })
+      await expect(
+        createClaudeChat(KEY, () => fake.client).stream(CONVERSATION, {
+          onText: () => undefined,
+          signal: new AbortController().signal,
+        }),
+      ).rejects.toMatchObject({ failure: 'unknown', detail })
+    }
+  })
+
+  it('never puts a key or headers in the detail', async () => {
+    const leaky = Anthropic.APIError.generate(
+      401,
+      { error: { type: 'authentication_error', message: `bad key ${KEY}` } },
+      `401 bad key ${KEY}`,
+      new Headers({ 'x-api-key': KEY }),
+    )
+    const fake = fakeClient({ error: leaky })
+
+    const failure = await createClaudeChat(KEY, () => fake.client)
+      .stream(CONVERSATION, { onText: () => undefined, signal: new AbortController().signal })
+      .catch((error: unknown) => error)
+
+    expect(failure).toMatchObject({ failure: 'invalid-key' })
+    expect(JSON.stringify(failure)).not.toContain(KEY)
+    expect(String((failure as ChatFailureError).detail)).not.toContain(KEY)
   })
 })

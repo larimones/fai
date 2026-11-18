@@ -31,3 +31,4 @@ A dona do projeto promoveu do backlog a conversa com a Fai (RF-18, RF-19, RNF-15
 - A dona do projeto precisa de uma conta no serviço e paga por uso.
 - No Linux sem cofre de senhas, a chave precisa ser colada a cada início do app.
 - Testes automatizados nunca chamam o serviço; a conferência real gasta poucos centavos, com autorização.
+- **Só a API assíncrona do `safeStorage` (2026-11-18, T7.11):** no Linux, com o Electron 44.9.3, o que `encryptString` grava não decifra na execução seguinte; `encryptStringAsync` e `decryptStringAsync` funcionam entre execuções (protótipo e app). A chave é cifrada de novo quando o sistema pede (`shouldReEncrypt`).

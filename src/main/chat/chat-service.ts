@@ -123,8 +123,11 @@ export function createChatService(options: ChatServiceOptions): ChatService {
         }
         controller = null
         const failure = failureOf(error)
-        // Only the kind of failure: the original error may carry request details.
-        console.error(`Fai: a resposta da conversa falhou (${failure}).`)
+        // Only the kind and its safe detail: the original error may carry request details.
+        const detail = error instanceof ChatFailureError ? error.detail : undefined
+        console.error(
+          `Fai: a resposta da conversa falhou (${failure}${detail === undefined ? '' : `: ${detail}`}).`,
+        )
         const dropped = dropFailedMessage(conversation)
         conversation = dropped.conversation
         bubble.error({ message: FAILURE_MESSAGES[failure], text: dropped.text })

@@ -20,12 +20,12 @@ export function createLinuxDesktopIntegration(): DesktopIntegration {
     prepareNotifications() {
       // Notifications go through the desktop's notification service (D-Bus or portal); nothing to set.
     },
-    secretStorage() {
+    async secretStorage() {
       // Without a recognized keyring Electron falls back to `basic_text`, whose cipher uses a fixed
       // password: that would only look protected, so the key stays in memory instead.
       const backend = safeStorage.getSelectedStorageBackend()
       const realKeyring = backend !== 'basic_text' && backend !== 'unknown'
-      return safeStorage.isEncryptionAvailable() && realKeyring
+      return realKeyring && (await safeStorage.isAsyncEncryptionAvailable())
         ? osEncryptedStorage()
         : { persists: false }
     },

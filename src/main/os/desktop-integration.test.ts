@@ -30,14 +30,20 @@ const electron = vi.hoisted(() => {
       this.listeners.get(event)?.(...args)
     }
   }
+  // Reversible stand-in for the OS cipher: the bytes never hold the plain text.
+  const scramble = (text: string) => Array.from(text).reverse().join('')
   const safeStorage = {
-    isEncryptionAvailable: vi.fn(() => true),
+    isAsyncEncryptionAvailable: vi.fn(() => Promise.resolve(true)),
     getSelectedStorageBackend: vi.fn(() => 'gnome_libsecret'),
-    // Reversible stand-in for the OS cipher: the bytes never hold the plain text.
-    encryptString: vi.fn((text: string) =>
-      Buffer.from(Array.from(text).reverse().join(''), 'utf8'),
+    encryptStringAsync: vi.fn((text: string) =>
+      Promise.resolve(Buffer.from(scramble(text), 'utf8')),
     ),
-    decryptString: vi.fn((data: Buffer) => Array.from(data.toString('utf8')).reverse().join('')),
+    decryptStringAsync: vi.fn((data: Buffer) =>
+      Promise.resolve({ result: scramble(data.toString('utf8')), shouldReEncrypt: false }),
+    ),
+    // The synchronous API: on Linux, what it encrypts cannot be read by the next run (2026-11-18).
+    encryptString: vi.fn(),
+    decryptString: vi.fn(),
   }
   return {
     Tray: FakeTray,
@@ -193,55 +199,69 @@ describe('notifications (RF-15, ADR-0016)', () => {
 
 describe('secret storage (RF-19 CA2, ADR-0017)', () => {
   beforeEach(() => {
-    electron.safeStorage.isEncryptionAvailable.mockReturnValue(true)
+    electron.safeStorage.isAsyncEncryptionAvailable.mockResolvedValue(true)
     electron.safeStorage.getSelectedStorageBackend.mockReturnValue('gnome_libsecret')
   })
 
-  function roundTrip(platform: NodeJS.Platform) {
-    const storage = createDesktopIntegration(platform).secretStorage()
+  async function roundTrip(platform: NodeJS.Platform) {
+    const storage = await createDesktopIntegration(platform).secretStorage()
     if (!storage.persists) {
       throw new Error('expected an encrypting storage')
     }
-    const encrypted = storage.encrypt('sk-ant-segredo')
-    return { encrypted, decrypted: storage.decrypt(encrypted) }
+    const encrypted = await storage.encrypt('sk-ant-segredo')
+    return { encrypted, decrypted: await storage.decrypt(encrypted) }
   }
 
-  it('on Windows, encrypts with the OS (DPAPI) when it is available', () => {
-    const { encrypted, decrypted } = roundTrip('win32')
+  it('on Windows, encrypts with the OS (DPAPI) through the asynchronous API', async () => {
+    const { encrypted, decrypted } = await roundTrip('win32')
 
-    expect(electron.safeStorage.encryptString).toHaveBeenCalledWith('sk-ant-segredo')
+    expect(electron.safeStorage.encryptStringAsync).toHaveBeenCalledWith('sk-ant-segredo')
     expect(encrypted.toString('utf8')).not.toContain('sk-ant-segredo')
-    expect(decrypted).toBe('sk-ant-segredo')
+    expect(decrypted).toEqual({ text: 'sk-ant-segredo', reEncrypt: false })
     expect(electron.safeStorage.getSelectedStorageBackend).not.toHaveBeenCalled()
+    expect(electron.safeStorage.encryptString).not.toHaveBeenCalled()
+    expect(electron.safeStorage.decryptString).not.toHaveBeenCalled()
   })
 
-  it('on Windows, keeps the key only in memory when encryption is not available', () => {
-    electron.safeStorage.isEncryptionAvailable.mockReturnValue(false)
+  it('says when the OS wants the secret encrypted again (a new key)', async () => {
+    electron.safeStorage.decryptStringAsync.mockResolvedValueOnce({
+      result: 'sk-ant-segredo',
+      shouldReEncrypt: true,
+    })
 
-    expect(createDesktopIntegration('win32').secretStorage()).toEqual({ persists: false })
+    expect((await roundTrip('linux')).decrypted).toEqual({
+      text: 'sk-ant-segredo',
+      reEncrypt: true,
+    })
+  })
+
+  it('on Windows, keeps the key only in memory when encryption is not available', async () => {
+    electron.safeStorage.isAsyncEncryptionAvailable.mockResolvedValue(false)
+
+    expect(await createDesktopIntegration('win32').secretStorage()).toEqual({ persists: false })
   })
 
   it.each(['gnome_libsecret', 'kwallet', 'kwallet5', 'kwallet6'])(
     'on Linux, encrypts with the %s keyring',
-    (backend) => {
+    async (backend) => {
       electron.safeStorage.getSelectedStorageBackend.mockReturnValue(backend)
 
-      expect(roundTrip('linux').decrypted).toBe('sk-ant-segredo')
+      expect((await roundTrip('linux')).decrypted.text).toBe('sk-ant-segredo')
     },
   )
 
   it.each(['basic_text', 'unknown'])(
     'on Linux, keeps the key only in memory with the %s backend, whose cipher does not protect',
-    (backend) => {
+    async (backend) => {
       electron.safeStorage.getSelectedStorageBackend.mockReturnValue(backend)
 
-      expect(createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
+      expect(await createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
     },
   )
 
-  it('on Linux, keeps the key only in memory when encryption is not available', () => {
-    electron.safeStorage.isEncryptionAvailable.mockReturnValue(false)
+  it('on Linux, keeps the key only in memory when encryption is not available', async () => {
+    electron.safeStorage.isAsyncEncryptionAvailable.mockResolvedValue(false)
 
-    expect(createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
+    expect(await createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
   })
 })

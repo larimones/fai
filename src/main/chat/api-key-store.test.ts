@@ -8,17 +8,22 @@ import { createApiKeyStore } from './api-key-store'
 const KEY = 'sk-ant-api03-segredo-da-fai'
 
 /** A reversible cipher, so the file never holds the key as typed. */
-const encrypting: SecretStorage = {
+const encrypting = {
   persists: true,
-  encrypt: (text) => Buffer.from(`cifrado:${Buffer.from(text).toString('base64')}`, 'utf8'),
-  decrypt: (data) => {
+  encrypt: vi.fn((text: string) =>
+    Promise.resolve(Buffer.from(`cifrado:${Buffer.from(text).toString('base64')}`, 'utf8')),
+  ),
+  decrypt: vi.fn((data: Buffer) => {
     const text = data.toString('utf8')
     if (!text.startsWith('cifrado:')) {
-      throw new Error('não decifra')
+      return Promise.reject(new Error('não decifra'))
     }
-    return Buffer.from(text.slice('cifrado:'.length), 'base64').toString('utf8')
-  },
-}
+    return Promise.resolve({
+      text: Buffer.from(text.slice('cifrado:'.length), 'base64').toString('utf8'),
+      reEncrypt: false,
+    })
+  }),
+} satisfies SecretStorage
 
 let dir: string
 let filePath: string
@@ -108,5 +113,17 @@ describe('API key store (RF-19, ADR-0017)', () => {
     await store.clear()
 
     expect(await readdir(dir)).toEqual([])
+  })
+
+  it('encrypts the key again when the OS asks to, so it keeps working', async () => {
+    await createApiKeyStore({ filePath, storage: encrypting }).save(KEY)
+    encrypting.decrypt.mockResolvedValueOnce({ text: KEY, reEncrypt: true })
+    encrypting.encrypt.mockResolvedValueOnce(Buffer.from('cifrado:nova-cifra', 'utf8'))
+    const store = createApiKeyStore({ filePath, storage: encrypting })
+
+    await store.load()
+
+    expect(store.get()).toBe(KEY)
+    expect((await readFile(filePath)).toString('utf8')).toBe('cifrado:nova-cifra')
   })
 })
