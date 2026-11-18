@@ -1,7 +1,7 @@
 # Feature 08 — Empacotamento para Windows
 
 - **Etapa:** 7 (Empacotamento e fechamento do MVP)
-- **Status:** em implementação
+- **Status:** em verificação
 - **Requisitos:** RNF-13, RNF-14; fecha a "Definição de pronto do MVP" (`roadmap.md`)
 
 ## Objetivo
