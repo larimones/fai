@@ -11,6 +11,7 @@ Cada etapa termina com: `npm run check` passando (saída real registrada), crit�
 | 5     | Tarefas                           | Janela do painel; menu de contexto da Fai; criar/concluir/reabrir/excluir tarefas; persistência; comemoração ao concluir (animação `celebrate`); acessibilidade.                                                                                                       | RF-10..13, RF-17, RNF-10            |
 | 6     | Lembretes e notificações          | Criar/excluir lembretes; agendador por _poll_ + `resume`; notificação nativa; lembretes perdidos; clique abre painel.                                                                                                                                                  | RF-14..16, RF-17                    |
 | 7     | Empacotamento e fechamento do MVP | electron-builder (NSIS) para Windows; AppUserModelID; ícones; Electron Fuses; revisão de segurança; README de uso e limitações; checklist da definição de pronto.                                                                                                      | RNF-13, RNF-14                      |
+| 8     | Conversa com a Fai                | Depois do MVP (promovida do backlog em 2026-11-18). "Conversar" no menu; balão de fala perto da Fai; respostas por serviço de IA, só pelo processo principal; chave cifrada pelo SO; conversa não gravada; erros gentis.                                               | RF-18, RF-19, RNF-15                |
 
 ## Definição de pronto do MVP
 

@@ -97,6 +97,20 @@ Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o c
 - CA1 [manual] Tarefas, lembretes e posição da Fai permanecem após fechar e reabrir o app e após reiniciar o computador.
 - CA2 [auto] Ida e volta (salvar → carregar) preserva os dados exatamente.
 
+### RF-18 — Conversar com a Fai (Etapa 8)
+
+Promovido do backlog pela dona do projeto em 2026-11-18 (feature 07).
+
+- CA1 [manual] "Conversar", no menu de contexto da Fai e no da bandeja, abre um balão de fala perto dela, com o campo de mensagem focado.
+- CA2 [manual] A Fai responde por um serviço de IA, em português, com a personalidade dela (carinhosa, poucas frases); o balão mostra a conversa (mensagens das duas) e rola quando fica longa.
+- CA3 [auto] Fechar o balão descarta a conversa: reabrir começa vazio, e nada da conversa é gravado no computador.
+- CA4 [auto] Sem rede, com chave inválida ou com o serviço fora do ar, o balão mostra uma mensagem gentil em português, e o resto do app continua funcionando.
+
+### RF-19 — Chave do serviço de IA (Etapa 8)
+
+- CA1 [manual] Sem chave guardada, o balão pede a chave uma vez; ela pode ser trocada ou apagada depois.
+- CA2 [auto] A chave é guardada cifrada pelo sistema operacional, fora do `fai-data.json` e do repositório, e nunca volta ao renderer depois de salva.
+
 ## Requisitos não funcionais
 
 ### RNF-01 — Isolamento do renderer (Etapa 1)
@@ -119,7 +133,7 @@ Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o c
 ### RNF-04 — Sem conteúdo remoto (Etapa 1)
 
 - CA1 [auto/manual] Navegação para fora do app e `window.open` são bloqueados; pedidos de permissão (câmera, geolocalização etc.) são negados.
-- CA2 [manual] O app funciona com a rede desligada.
+- CA2 [manual] O app funciona com a rede desligada (a partir da Etapa 8, só a conversa com a Fai depende de rede e avisa quando ela falta).
 
 ### RNF-05 — Multiplataforma (Etapa 1 em diante)
 
@@ -161,8 +175,14 @@ Como a mascote não tem moldura nem botão na barra de tarefas, a bandeja é o c
 
 ### RNF-12 — Assets locais e segredos (todas)
 
-- CA1 [revisão] Nenhuma URL remota em código, HTML ou CSS do app.
+- CA1 [revisão] Nenhuma URL remota em código, HTML ou CSS do app, exceto o endereço do serviço de IA, só no processo principal (Etapa 8, RNF-15).
 - CA2 [revisão] Nenhum segredo no repositório ou no renderer.
+
+### RNF-15 — Privacidade da conversa (Etapa 8)
+
+- CA1 [auto/revisão] Só o processo principal fala com o serviço de IA; a CSP das janelas continua sem endereços remotos.
+- CA2 [revisão] Só sai da máquina o texto da conversa aberta (e as instruções de personalidade da Fai); tarefas, lembretes, posição e outros dados nunca são enviados.
+- CA3 [revisão] Nada é enviado sem a pessoa escrever e mandar uma mensagem.
 
 ### RNF-13 — Empacotamento Windows (Etapa 7)
 

@@ -12,7 +12,7 @@ Uma pessoa: eu, a desenvolvedora e usuária. Uso diário em Windows (alvo da pri
 
 1. **Discreta antes de tudo.** A Fai nunca rouba o foco, não aparece na barra de tarefas e deixa os cliques passarem pelas áreas vazias ao redor dela.
 2. **Acolhedora.** Reações e textos gentis, em português, sem tom de cobrança.
-3. **Local e privada.** Todos os dados ficam na máquina. Sem rede, sem conta, sem telemetria no MVP.
+3. **Local e privada.** Todos os dados ficam na máquina. Sem rede, sem conta, sem telemetria no MVP. A partir da Etapa 8, a única exceção é a conversa com a Fai: o texto que a pessoa escreve no balão vai para o serviço de IA, só quando ela manda uma mensagem, e não é gravado (decisão da dona do projeto, 2026-11-18).
 4. **Segura por padrão.** Renderer isolado, IPC mínimo e validado, sem conteúdo remoto.
 5. **Simples de manter.** Domínio puro e testável; integração com o SO isolada atrás de interfaces; poucas dependências.
 6. **Entregas verificáveis.** Cada etapa termina com critérios de aceitação conferidos por execução real.
@@ -39,7 +39,7 @@ Paleta inicial (tokens CSS, ajustável quando o design existir):
 
 - Versão Linux empacotada e distribuída (Linux é ambiente de desenvolvimento no MVP).
 - macOS.
-- Integração com IA, rede, sincronização, contas ou login.
+- Integração com IA, rede, sincronização, contas ou login (a conversa com IA entra depois do MVP, na Etapa 8).
 - Personalização (skins, temas, nome da mascote).
 - Qualquer item de `backlog.md`.
 - Recorrência de lembretes, prioridades, prazos ou categorias de tarefas.
