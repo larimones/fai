@@ -1,7 +1,7 @@
 # Feature 08 — Empacotamento para Windows
 
 - **Etapa:** 7 (Empacotamento e fechamento do MVP)
-- **Status:** especificada
+- **Status:** planejada
 - **Requisitos:** RNF-13, RNF-14; fecha a "Definição de pronto do MVP" (`roadmap.md`)
 
 ## Objetivo
@@ -54,13 +54,8 @@ Hoje a Fai só roda pelo terminal, com `npm run dev` ou `npm run preview`. A don
 - 2026-11-18: desinstalar **mantém os dados**; o README diz onde apagá-los à mão.
 - 2026-11-18: atalhos no **Menu Iniciar e na área de trabalho**, e a Fai **abre ao terminar** a instalação.
 
+- 2026-11-18 (plano): o instalador é **gerado no Windows**; a versão do primeiro instalador é **1.0.0**.
+
 ## Perguntas em aberto
 
-Para o `/spec:plan`:
-
-- Versão do electron-builder e das ferramentas de Fuses (dependências novas, a justificar), e quais Fuses ligar além das do ADR-0007.
-- Gerar o instalador no Windows ou também a partir do Linux.
-- Número da versão do app no primeiro instalador.
-- Como o `fai-ai-key.bin` e o `safeStorage` se comportam no app instalado (a cifra do Windows ainda não foi vista funcionando; ver feature 07).
-- Tamanho do instalador e o que entra no pacote (só o `out/` e o necessário de `node_modules`).
-- Roteiro de verificação no Windows: o que dá para automatizar (Fuses, conteúdo do pacote) e o que fica manual.
+Nenhuma. As do `/spec:create` foram respondidas no `plan.md` e no ADR-0018 (ferramentas e versões, onde gerar, versão, conteúdo e tamanho do pacote, roteiro). A cifra da chave no Windows continua a conferir na verificação (ver feature 07).

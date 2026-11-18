@@ -13,4 +13,4 @@ Status: `especificada` → `planejada` → `em implementação` → `em verifica
 | 05      | 5     | concluída      | [05-painel-de-tarefas](05-painel-de-tarefas/spec.md)                                  |
 | 06      | 6     | em verificação | [06-lembretes-e-notificacoes](06-lembretes-e-notificacoes/spec.md)                    |
 | 07      | 8     | em verificação | [07-conversa-com-a-fai](07-conversa-com-a-fai/spec.md)                                |
-| 08      | 7     | especificada   | [08-empacotamento-windows](08-empacotamento-windows/spec.md)                          |
+| 08      | 7     | planejada      | [08-empacotamento-windows](08-empacotamento-windows/spec.md)                          |
