@@ -26,6 +26,9 @@ function contentSecurityPolicy(): Plugin {
 export default defineConfig({
   main: {
     resolve: { alias },
+    // The main process's dependencies (the AI SDK, zod) are bundled into out/, so the installer
+    // ships no node_modules (ADR-0018).
+    build: { externalizeDeps: false },
   },
   preload: {
     resolve: { alias },
