@@ -1,6 +1,7 @@
-import { app, Tray } from 'electron'
+import { app, safeStorage, Tray } from 'electron'
 import type { DesktopIntegration } from './desktop-integration'
 import { createNotifier } from './notifier'
+import { osEncryptedStorage } from './safe-storage'
 
 /** The app id the Windows installer (Stage 7) will register; toasts are grouped under it (ADR-0016). */
 export const APP_USER_MODEL_ID = 'io.github.larimones.fai'
@@ -27,6 +28,10 @@ export function createWindowsDesktopIntegration(): DesktopIntegration {
     prepareNotifications() {
       // Without it, toasts do not show or show as "electron.app.Electron" (ADR-0006).
       app.setAppUserModelId(APP_USER_MODEL_ID)
+    },
+    secretStorage() {
+      // DPAPI: tied to the Windows user account.
+      return safeStorage.isEncryptionAvailable() ? osEncryptedStorage() : { persists: false }
     },
     ...notifier,
   }

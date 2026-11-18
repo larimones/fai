@@ -17,6 +17,18 @@ export interface NotifyOptions {
 }
 
 /**
+ * Where a secret such as the AI service key can be kept (ADR-0017): encrypted by the OS, or only
+ * in memory until the app closes when the OS offers no real protection.
+ */
+export type SecretStorage =
+  | {
+      readonly persists: true
+      encrypt(text: string): Buffer
+      decrypt(data: Buffer): string
+    }
+  | { readonly persists: false }
+
+/**
  * Everything that behaves differently between operating systems (architecture.md).
  * It only grows when a stage needs a new integration.
  */
@@ -33,6 +45,8 @@ export interface DesktopIntegration {
   notify(options: NotifyOptions): void
   /** Notifications shown and not closed yet (kept alive so their click works). */
   openNotifications(): number
+  /** How secrets can be kept on this computer; call after the app is ready. */
+  secretStorage(): SecretStorage
 }
 
 export function createDesktopIntegration(platform: NodeJS.Platform): DesktopIntegration {

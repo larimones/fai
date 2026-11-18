@@ -1,6 +1,7 @@
-import { Tray } from 'electron'
+import { safeStorage, Tray } from 'electron'
 import type { DesktopIntegration } from './desktop-integration'
 import { createNotifier } from './notifier'
+import { osEncryptedStorage } from './safe-storage'
 
 export function createLinuxDesktopIntegration(): DesktopIntegration {
   const notifier = createNotifier()
@@ -18,6 +19,15 @@ export function createLinuxDesktopIntegration(): DesktopIntegration {
     },
     prepareNotifications() {
       // Notifications go through the desktop's notification service (D-Bus or portal); nothing to set.
+    },
+    secretStorage() {
+      // Without a recognized keyring Electron falls back to `basic_text`, whose cipher uses a fixed
+      // password: that would only look protected, so the key stays in memory instead.
+      const backend = safeStorage.getSelectedStorageBackend()
+      const realKeyring = backend !== 'basic_text' && backend !== 'unknown'
+      return safeStorage.isEncryptionAvailable() && realKeyring
+        ? osEncryptedStorage()
+        : { persists: false }
     },
     ...notifier,
   }

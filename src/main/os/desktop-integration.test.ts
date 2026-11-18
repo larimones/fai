@@ -30,7 +30,21 @@ const electron = vi.hoisted(() => {
       this.listeners.get(event)?.(...args)
     }
   }
-  return { Tray: FakeTray, Notification: FakeNotification, app: { setAppUserModelId: vi.fn() } }
+  const safeStorage = {
+    isEncryptionAvailable: vi.fn(() => true),
+    getSelectedStorageBackend: vi.fn(() => 'gnome_libsecret'),
+    // Reversible stand-in for the OS cipher: the bytes never hold the plain text.
+    encryptString: vi.fn((text: string) =>
+      Buffer.from(Array.from(text).reverse().join(''), 'utf8'),
+    ),
+    decryptString: vi.fn((data: Buffer) => Array.from(data.toString('utf8')).reverse().join('')),
+  }
+  return {
+    Tray: FakeTray,
+    Notification: FakeNotification,
+    app: { setAppUserModelId: vi.fn() },
+    safeStorage,
+  }
 })
 
 vi.mock('electron', () => electron)
@@ -174,5 +188,60 @@ describe('notifications (RF-15, ADR-0016)', () => {
     expect(error).toHaveBeenCalled()
     expect(integration.openNotifications()).toBe(0)
     error.mockRestore()
+  })
+})
+
+describe('secret storage (RF-19 CA2, ADR-0017)', () => {
+  beforeEach(() => {
+    electron.safeStorage.isEncryptionAvailable.mockReturnValue(true)
+    electron.safeStorage.getSelectedStorageBackend.mockReturnValue('gnome_libsecret')
+  })
+
+  function roundTrip(platform: NodeJS.Platform) {
+    const storage = createDesktopIntegration(platform).secretStorage()
+    if (!storage.persists) {
+      throw new Error('expected an encrypting storage')
+    }
+    const encrypted = storage.encrypt('sk-ant-segredo')
+    return { encrypted, decrypted: storage.decrypt(encrypted) }
+  }
+
+  it('on Windows, encrypts with the OS (DPAPI) when it is available', () => {
+    const { encrypted, decrypted } = roundTrip('win32')
+
+    expect(electron.safeStorage.encryptString).toHaveBeenCalledWith('sk-ant-segredo')
+    expect(encrypted.toString('utf8')).not.toContain('sk-ant-segredo')
+    expect(decrypted).toBe('sk-ant-segredo')
+    expect(electron.safeStorage.getSelectedStorageBackend).not.toHaveBeenCalled()
+  })
+
+  it('on Windows, keeps the key only in memory when encryption is not available', () => {
+    electron.safeStorage.isEncryptionAvailable.mockReturnValue(false)
+
+    expect(createDesktopIntegration('win32').secretStorage()).toEqual({ persists: false })
+  })
+
+  it.each(['gnome_libsecret', 'kwallet', 'kwallet5', 'kwallet6'])(
+    'on Linux, encrypts with the %s keyring',
+    (backend) => {
+      electron.safeStorage.getSelectedStorageBackend.mockReturnValue(backend)
+
+      expect(roundTrip('linux').decrypted).toBe('sk-ant-segredo')
+    },
+  )
+
+  it.each(['basic_text', 'unknown'])(
+    'on Linux, keeps the key only in memory with the %s backend, whose cipher does not protect',
+    (backend) => {
+      electron.safeStorage.getSelectedStorageBackend.mockReturnValue(backend)
+
+      expect(createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
+    },
+  )
+
+  it('on Linux, keeps the key only in memory when encryption is not available', () => {
+    electron.safeStorage.isEncryptionAvailable.mockReturnValue(false)
+
+    expect(createDesktopIntegration('linux').secretStorage()).toEqual({ persists: false })
   })
 })
