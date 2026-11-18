@@ -132,4 +132,13 @@ describe('panel controller (CA3, CA4, ADR-0014)', () => {
 
     expect(window.setPosition).not.toHaveBeenCalled()
   })
+
+  it('hides when another window takes its place (the chat bubble, ADR-0017)', () => {
+    const { window, controller } = setup()
+    controller.open('tasks')
+
+    controller.hide()
+
+    expect(window.hide).toHaveBeenCalledOnce()
+  })
 })

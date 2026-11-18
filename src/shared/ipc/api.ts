@@ -79,6 +79,12 @@ export interface ChatOpened {
   readonly keyPersists: boolean
 }
 
+/** Where the bubble's tail points (towards Fai) and where it sits along that edge, in pixels. */
+export interface ChatPlaced {
+  readonly tail: 'down' | 'left' | 'right'
+  readonly tailAt: number
+}
+
 export interface ChatSendRequest {
   readonly text: string
 }
@@ -150,6 +156,7 @@ export interface ChatApi {
   send(text: string): Promise<IpcResult<null>>
   saveKey(key: string): Promise<IpcResult<null>>
   onOpened(listener: (opened: ChatOpened) => void): () => void
+  onPlaced(listener: (placed: ChatPlaced) => void): () => void
   onReplyDelta(listener: (text: string) => void): () => void
   onReplyEnd(listener: () => void): () => void
   onReplyError(listener: (failure: ChatReplyError) => void): () => void

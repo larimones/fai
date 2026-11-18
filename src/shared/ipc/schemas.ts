@@ -4,6 +4,7 @@ import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type {
   ChatOpened,
+  ChatPlaced,
   ChatReplyDelta,
   ChatReplyError,
   ChatSaveKeyRequest,
@@ -133,6 +134,10 @@ export const eventContract = {
     hasKey: z.boolean(),
     keyPersists: z.boolean(),
   }) satisfies z.ZodType<ChatOpened>,
+  [IpcChannels.chatPlaced]: z.strictObject({
+    tail: z.enum(['down', 'left', 'right']),
+    tailAt: z.int().min(0).max(1000),
+  }) satisfies z.ZodType<ChatPlaced>,
   [IpcChannels.chatReplyDelta]: z.strictObject({
     text: z.string().max(MAX_CHAT_EVENT_TEXT),
   }) satisfies z.ZodType<ChatReplyDelta>,

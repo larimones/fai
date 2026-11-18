@@ -22,6 +22,8 @@ export const IpcChannels = {
   chatSaveKey: 'chat:save-key',
   /** Main → chat bubble. */
   chatOpened: 'chat:opened',
+  /** Where the bubble's tail points, on opening and while it follows Fai. */
+  chatPlaced: 'chat:placed',
   chatReplyDelta: 'chat:reply-delta',
   chatReplyEnd: 'chat:reply-end',
   chatReplyError: 'chat:reply-error',

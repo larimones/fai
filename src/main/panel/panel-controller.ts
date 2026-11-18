@@ -41,6 +41,8 @@ export interface PanelController {
   open(tab: PanelTab): void
   /** Keeps an open panel next to Fai, who was just moved to `position`. */
   follow(position: ScreenPoint): void
+  /** Hides the panel, for example when the chat bubble opens (ADR-0017). */
+  hide(): void
 }
 
 /** Opens, places and closes the task panel (CA3, CA4, ADR-0014). */
@@ -78,6 +80,10 @@ export function createPanelController(options: PanelControllerOptions): PanelCon
       if (window.isVisible()) {
         placeNextTo(position)
       }
+    },
+
+    hide() {
+      window.hide()
     },
   }
 }

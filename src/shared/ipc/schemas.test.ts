@@ -198,3 +198,18 @@ describe('chat channels (CA9, ADR-0017)', () => {
     expect(failed.safeParse({ message: '', text: 'oi' }).success).toBe(false)
   })
 })
+
+describe('chat bubble placement event (ADR-0017)', () => {
+  const placed = eventContract[IpcChannels.chatPlaced]
+
+  it('says where the tail points and where it sits', () => {
+    for (const tail of ['down', 'left', 'right']) {
+      expect(placed.safeParse({ tail, tailAt: 150 }).success).toBe(true)
+    }
+    expect(placed.safeParse({ tail: 'up', tailAt: 150 }).success).toBe(false)
+    expect(placed.safeParse({ tail: 'down', tailAt: -1 }).success).toBe(false)
+    expect(placed.safeParse({ tail: 'down', tailAt: 1.5 }).success).toBe(false)
+    expect(placed.safeParse({ tail: 'down' }).success).toBe(false)
+    expect(placed.safeParse({ tail: 'down', tailAt: 10, x: 1 }).success).toBe(false)
+  })
+})
