@@ -17,6 +17,14 @@ export const IpcChannels = {
   remindersDelete: 'reminders:delete',
   /** Main → panel window: reminders were announced, reload the tab. */
   remindersChanged: 'reminders:changed',
+  /** Chat bubble → main: the person's message (ADR-0017). */
+  chatSend: 'chat:send',
+  chatSaveKey: 'chat:save-key',
+  /** Main → chat bubble. */
+  chatOpened: 'chat:opened',
+  chatReplyDelta: 'chat:reply-delta',
+  chatReplyEnd: 'chat:reply-end',
+  chatReplyError: 'chat:reply-error',
 } as const
 
 export type IpcChannel = (typeof IpcChannels)[keyof typeof IpcChannels]

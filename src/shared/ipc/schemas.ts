@@ -3,6 +3,11 @@ import type { AppInfo } from '@domain/app-info'
 import type { Reminder } from '@domain/reminders/reminders'
 import type { Task } from '@domain/tasks/tasks'
 import type {
+  ChatOpened,
+  ChatReplyDelta,
+  ChatReplyError,
+  ChatSaveKeyRequest,
+  ChatSendRequest,
   CreateReminderRequest,
   CreateTaskRequest,
   DeleteReminderRequest,
@@ -50,6 +55,15 @@ export const reminderSchema = z.strictObject({
 /** Caps what the renderer can send; the domain then applies the real title rule. */
 const MAX_TITLE_PAYLOAD = 1000
 
+/** Caps a chat message; the domain then counts code points (1 to 1000), so emoji fit. */
+const MAX_CHAT_PAYLOAD = 4000
+
+/** Caps a reply piece or a failure message sent to the bubble. */
+const MAX_CHAT_EVENT_TEXT = 20_000
+
+/** An API key as pasted: no spaces; its real check is the AI service accepting it. */
+const apiKeySchema = z.string().min(1).max(500).regex(/^\S+$/)
+
 /** Request/response schemas for each `invoke` channel, validated in the main process. */
 export const invokeContract = {
   [IpcChannels.appGetInfo]: {
@@ -84,6 +98,14 @@ export const invokeContract = {
     request: z.strictObject({ id: z.uuid() }),
     response: z.null(),
   } satisfies InvokeDefinition<DeleteReminderRequest, null>,
+  [IpcChannels.chatSend]: {
+    request: z.strictObject({ text: z.string().max(MAX_CHAT_PAYLOAD) }),
+    response: z.null(),
+  } satisfies InvokeDefinition<ChatSendRequest, null>,
+  [IpcChannels.chatSaveKey]: {
+    request: z.strictObject({ key: apiKeySchema }),
+    response: z.null(),
+  } satisfies InvokeDefinition<ChatSaveKeyRequest, null>,
 }
 
 /** Payload schemas for each `send` channel (renderer → main, no reply), validated in the main process. */
@@ -100,10 +122,23 @@ export const sendContract = {
 /** Payload schemas for each event the main process sends to a window; the preload checks them. */
 export const eventContract = {
   [IpcChannels.mascotReaction]: z.strictObject({
-    kind: z.enum(['celebrate', 'reminder']),
+    kind: z.enum(['celebrate', 'reminder', 'reply']),
   }) satisfies z.ZodType<MascotReaction>,
   [IpcChannels.panelOpened]: z.strictObject({
     tab: z.enum(['tasks', 'reminders']),
   }) satisfies z.ZodType<PanelOpened>,
   [IpcChannels.remindersChanged]: z.undefined(),
+  [IpcChannels.chatOpened]: z.strictObject({
+    mode: z.enum(['chat', 'key']),
+    hasKey: z.boolean(),
+    keyPersists: z.boolean(),
+  }) satisfies z.ZodType<ChatOpened>,
+  [IpcChannels.chatReplyDelta]: z.strictObject({
+    text: z.string().max(MAX_CHAT_EVENT_TEXT),
+  }) satisfies z.ZodType<ChatReplyDelta>,
+  [IpcChannels.chatReplyEnd]: z.undefined(),
+  [IpcChannels.chatReplyError]: z.strictObject({
+    message: z.string().min(1).max(MAX_CHAT_EVENT_TEXT),
+    text: z.string().max(MAX_CHAT_PAYLOAD),
+  }) satisfies z.ZodType<ChatReplyError>,
 }

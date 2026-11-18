@@ -14,6 +14,16 @@ export type IpcErrorCode =
   | 'INVALID_TEXT'
   /** The reminder time is not in the future (RF-14 CA1). */
   | 'DUE_NOT_IN_FUTURE'
+  /** Fai is still answering the previous message (ADR-0017). */
+  | 'BUSY'
+  /** The conversation reached its 30 messages. */
+  | 'LIMIT'
+  /** No API key yet: the bubble asks for one. */
+  | 'NO_KEY'
+  /** The AI service did not accept the key. */
+  | 'INVALID_KEY'
+  /** The key could not be checked or kept (no network, service down). */
+  | 'KEY_NOT_SAVED'
 
 export interface IpcError {
   readonly code: IpcErrorCode
@@ -38,7 +48,7 @@ export interface DragMessage {
 
 /** What makes Fai react, sent by the main process (RF-12 CA2). */
 export interface MascotReaction {
-  readonly kind: 'celebrate' | 'reminder'
+  readonly kind: 'celebrate' | 'reminder' | 'reply'
 }
 
 /** The panel tabs (ADR-0016). */
@@ -57,6 +67,35 @@ export interface CreateReminderRequest {
 
 export interface DeleteReminderRequest {
   readonly id: string
+}
+
+/** What the chat bubble shows when it opens (ADR-0017). */
+export type ChatMode = 'chat' | 'key'
+
+export interface ChatOpened {
+  readonly mode: ChatMode
+  readonly hasKey: boolean
+  /** False when the key lasts only until the app closes (Linux without a keyring). */
+  readonly keyPersists: boolean
+}
+
+export interface ChatSendRequest {
+  readonly text: string
+}
+
+export interface ChatSaveKeyRequest {
+  readonly key: string
+}
+
+/** A piece of Fai's reply, as it arrives. */
+export interface ChatReplyDelta {
+  readonly text: string
+}
+
+/** Why the reply failed, in pt-BR, and the text to give back to the field ('' when none). */
+export interface ChatReplyError {
+  readonly message: string
+  readonly text: string
 }
 
 export interface CreateTaskRequest {
@@ -104,4 +143,14 @@ export interface PanelApi {
   onOpened(listener: (tab: PanelTab) => void): () => void
   /** Calls `listener` when the main process changed the reminders (ADR-0016). */
   onRemindersChanged(listener: () => void): () => void
+}
+
+/** The whole surface exposed to the chat bubble as `window.faiChat` (ADR-0017). No way to read the key. */
+export interface ChatApi {
+  send(text: string): Promise<IpcResult<null>>
+  saveKey(key: string): Promise<IpcResult<null>>
+  onOpened(listener: (opened: ChatOpened) => void): () => void
+  onReplyDelta(listener: (text: string) => void): () => void
+  onReplyEnd(listener: () => void): () => void
+  onReplyError(listener: (failure: ChatReplyError) => void): () => void
 }

@@ -36,12 +36,13 @@ describe('mascot menu and reaction messages (ADR-0014)', () => {
     expect(openMenu.safeParse({ x: 10 }).success).toBe(false)
   })
 
-  it('knows the celebrate and reminder reactions, and the panel opens on a known tab', () => {
+  it('knows the celebrate, reminder and reply reactions, and the panel opens on a known tab', () => {
     const reaction = eventContract[IpcChannels.mascotReaction]
     const opened = eventContract[IpcChannels.panelOpened]
 
     expect(reaction.safeParse({ kind: 'celebrate' }).success).toBe(true)
     expect(reaction.safeParse({ kind: 'reminder' }).success).toBe(true)
+    expect(reaction.safeParse({ kind: 'reply' }).success).toBe(true)
     expect(reaction.safeParse({ kind: 'dance' }).success).toBe(false)
     expect(reaction.safeParse({ kind: 'celebrate', extra: 1 }).success).toBe(false)
     expect(opened.safeParse({ tab: 'tasks' }).success).toBe(true)
@@ -152,5 +153,48 @@ describe('task channels (CA16, ADR-0014)', () => {
     expect(create.response.safeParse({ ...task, secret: 'x' }).success).toBe(false)
     expect(create.response.safeParse({ ...task, createdAt: 'ontem' }).success).toBe(false)
     expect(create.response.safeParse({ ...task, title: '' }).success).toBe(false)
+  })
+})
+
+describe('chat channels (CA9, ADR-0017)', () => {
+  const send = invokeContract[IpcChannels.chatSend]
+  const saveKey = invokeContract[IpcChannels.chatSaveKey]
+  const opened = eventContract[IpcChannels.chatOpened]
+  const delta = eventContract[IpcChannels.chatReplyDelta]
+  const end = eventContract[IpcChannels.chatReplyEnd]
+  const failed = eventContract[IpcChannels.chatReplyError]
+
+  it('accepts the declared requests, responses and events', () => {
+    expect(send.request.safeParse({ text: 'oi, Fai' }).success).toBe(true)
+    // The domain counts code points; the payload cap leaves room for emoji (2 UTF-16 units each).
+    expect(send.request.safeParse({ text: '🧚'.repeat(1000) }).success).toBe(true)
+    expect(send.response.safeParse(null).success).toBe(true)
+    expect(saveKey.request.safeParse({ key: 'sk-ant-api03-abc_DEF-123' }).success).toBe(true)
+    expect(saveKey.response.safeParse(null).success).toBe(true)
+    for (const mode of ['chat', 'key']) {
+      expect(opened.safeParse({ mode, hasKey: true, keyPersists: false }).success).toBe(true)
+    }
+    expect(delta.safeParse({ text: 'Olá' }).success).toBe(true)
+    expect(end.safeParse(undefined).success).toBe(true)
+    expect(failed.safeParse({ message: 'Sem conexão.', text: 'oi' }).success).toBe(true)
+    expect(failed.safeParse({ message: 'Conversamos tanto!', text: '' }).success).toBe(true)
+  })
+
+  it('rejects extra fields, oversized texts, bad keys, unknown modes and stray payloads', () => {
+    expect(send.request.safeParse({ text: 'a'.repeat(4001) }).success).toBe(false)
+    expect(send.request.safeParse({ text: 'oi', history: [] }).success).toBe(false)
+    expect(send.request.safeParse(undefined).success).toBe(false)
+    expect(saveKey.request.safeParse({ key: '' }).success).toBe(false)
+    expect(saveKey.request.safeParse({ key: 'sk-ant abc' }).success).toBe(false)
+    expect(saveKey.request.safeParse({ key: ' sk-ant-abc' }).success).toBe(false)
+    expect(saveKey.request.safeParse({ key: 'a'.repeat(501) }).success).toBe(false)
+    expect(saveKey.request.safeParse({ key: 'sk', model: 'x' }).success).toBe(false)
+    expect(opened.safeParse({ mode: 'settings', hasKey: true, keyPersists: true }).success).toBe(
+      false,
+    )
+    expect(opened.safeParse({ mode: 'chat', hasKey: true }).success).toBe(false)
+    expect(delta.safeParse({ text: 1 }).success).toBe(false)
+    expect(end.safeParse({ done: true }).success).toBe(false)
+    expect(failed.safeParse({ message: '', text: 'oi' }).success).toBe(false)
   })
 })
